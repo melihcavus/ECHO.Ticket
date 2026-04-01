@@ -1,3 +1,5 @@
+using ECHO.Ticket.Business.Interfaces;
+using ECHO.Ticket.Business.Services;
 using ECHO.Ticket.DataAccess.Contexts;
 using ECHO.Ticket.DataAccess.Interfaces;
 using ECHO.Ticket.DataAccess.Repositories;
@@ -18,6 +20,8 @@ builder.Services.AddDbContext<EchoDbContext>(options =>
 
 // Repository'imizi sisteme tanıtıyoruz
 builder.Services.AddScoped(typeof(IRepository<>), typeof(GenericRepository<>));
+
+builder.Services.AddScoped<IEventService, EventService>();
 
 var app = builder.Build();
 
