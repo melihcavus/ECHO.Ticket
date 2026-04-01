@@ -6,4 +6,9 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\ECHO.Ticket.Core\ECHO.Ticket.Core.csproj" />
+      <ProjectReference Include="..\ECHO.Ticket.DataAccess\ECHO.Ticket.DataAccess.csproj" />
+    </ItemGroup>
+
 </Project>
