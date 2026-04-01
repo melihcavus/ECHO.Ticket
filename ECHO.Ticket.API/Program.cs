@@ -22,7 +22,7 @@ builder.Services.AddDbContext<EchoDbContext>(options =>
 builder.Services.AddScoped(typeof(IRepository<>), typeof(GenericRepository<>));
 
 builder.Services.AddScoped<IEventService, EventService>();
-
+builder.Services.AddScoped<ITicketService, TicketService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
