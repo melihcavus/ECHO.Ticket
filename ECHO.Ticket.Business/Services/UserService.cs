@@ -1,46 +1,52 @@
 using ECHO.Ticket.Business.Interfaces;
-using ECHO.Ticket.Core.Entities;
 using ECHO.Ticket.Core.Results;
 using ECHO.Ticket.DataAccess.Interfaces;
+using FluentValidation;
+using UserEntity = ECHO.Ticket.Core.Entities.User;
 
 namespace ECHO.Ticket.Business.Services;
 
 public class UserService : IUserService
 {
-    private readonly IRepository<User> _userRepository;
+    private readonly IRepository<UserEntity> _userRepository;
+    private readonly IValidator<UserEntity> _validator;
 
-    public UserService(IRepository<User> userRepository)
+    public UserService(IRepository<UserEntity> userRepository, IValidator<UserEntity> validator)
     {
         _userRepository = userRepository;
+        _validator = validator;
     }
 
-    public async Task<Result<IEnumerable<User>>> GetAllUsersAsync()
+    public async Task<Result<IEnumerable<UserEntity>>> GetAllUsersAsync()
     {
         var users = await _userRepository.GetAllAsync();
-        return Result<IEnumerable<User>>.Success(users);
+        return Result<IEnumerable<UserEntity>>.Success(users);
     }
 
-    public async Task<Result<User>> GetUserByIdAsync(Guid id)
+    public async Task<Result<UserEntity>> GetUserByIdAsync(Guid id)
     {
         var user = await _userRepository.GetByIdAsync(id);
         
         if (user == null)
-            return Result<User>.Failure("Kullanıcı bulunamadı.");
+            return Result<UserEntity>.Failure("Kullanıcı bulunamadı.");
             
-        return Result<User>.Success(user);
+        return Result<UserEntity>.Success(user);
     }
 
-    public async Task<Result> AddUserAsync(User newUser)
+    public async Task<Result> AddUserAsync(UserEntity newUser)
     {
-        // İŞ KURALI: Bu e-posta adresi sistemde zaten var mı?
-        // (Şimdilik tüm kullanıcıları çekip hafızada arıyoruz)
-        var allUsers = await _userRepository.GetAllAsync();
-        var isEmailExists = allUsers.Any(u => u.Email == newUser.Email);
-
-        if (isEmailExists)
+        // 1. FluentValidation Kontrolü (Email formatı doğru mu vb.)
+        var validationResult = await _validator.ValidateAsync(newUser);
+        if (!validationResult.IsValid)
         {
-            return Result.Failure("Bu e-posta adresi ile zaten bir kayıt mevcut!");
+            var errorMessage = string.Join(" | ", validationResult.Errors.Select(e => e.ErrorMessage));
+            return Result.Failure(errorMessage);
         }
+
+        // 2. Veritabanı Kontrolü (Email daha önce alınmış mı?)
+        var allUsers = await _userRepository.GetAllAsync();
+        if (allUsers.Any(u => u.Email == newUser.Email))
+            return Result.Failure("Bu e-posta adresi ile zaten bir kayıt mevcut!");
 
         await _userRepository.AddAsync(newUser);
         await _userRepository.SaveChangesAsync();

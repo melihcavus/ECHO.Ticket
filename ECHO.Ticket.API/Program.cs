@@ -1,8 +1,10 @@
 using ECHO.Ticket.Business.Interfaces;
 using ECHO.Ticket.Business.Services;
+using ECHO.Ticket.Business.Validations;
 using ECHO.Ticket.DataAccess.Contexts;
 using ECHO.Ticket.DataAccess.Interfaces;
 using ECHO.Ticket.DataAccess.Repositories;
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,12 +23,14 @@ builder.Services.AddDbContext<EchoDbContext>(options =>
 // Repository'imizi sisteme tanıtıyoruz
 builder.Services.AddScoped(typeof(IRepository<>), typeof(GenericRepository<>));
 
+builder.Services.AddValidatorsFromAssemblyContaining<EventValidator>();
+
 builder.Services.AddScoped<IEventService, EventService>();
 builder.Services.AddScoped<ITicketService, TicketService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IPledgeService, PledgeService>();
 
-var app = builder.Build();
+var app = builder.Build();  
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

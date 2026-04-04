@@ -2,6 +2,7 @@ using ECHO.Ticket.Business.Interfaces;
 using ECHO.Ticket.Core.Entities;
 using ECHO.Ticket.Core.Results;
 using ECHO.Ticket.DataAccess.Interfaces;
+using FluentValidation;
 using TicketEntity = ECHO.Ticket.Core.Entities.Ticket;
 
 namespace ECHO.Ticket.Business.Services;
@@ -9,12 +10,17 @@ namespace ECHO.Ticket.Business.Services;
 public class TicketService : ITicketService
 {
     private readonly IRepository<TicketEntity> _ticketRepository;
-    private readonly IRepository<Event> _eventRepository; // Etkinlik var mı diye kontrol etmek için!
+    private readonly IRepository<Event> _eventRepository;
+    private readonly IValidator<TicketEntity> _validator; 
 
-    public TicketService(IRepository<TicketEntity> ticketRepository, IRepository<Event> eventRepository)
+    public TicketService(
+        IRepository<TicketEntity> ticketRepository, 
+        IRepository<Event> eventRepository, 
+        IValidator<TicketEntity> validator)
     {
         _ticketRepository = ticketRepository;
         _eventRepository = eventRepository;
+        _validator = validator;
     }
 
     public async Task<Result<IEnumerable<TicketEntity>>> GetAllTicketsAsync()
@@ -25,8 +31,6 @@ public class TicketService : ITicketService
 
     public async Task<Result<IEnumerable<TicketEntity>>> GetTicketsByEventIdAsync(Guid eventId)
     {
-        // Şimdilik tüm biletleri çekip hafızada filtreliyoruz. 
-        // (İleride DataAccess katmanına bir "Where" metodu ekleyip bunu çok daha performanslı yapacağız)
         var allTickets = await _ticketRepository.GetAllAsync();
         var eventTickets = allTickets.Where(t => t.EventId == eventId);
 
@@ -50,17 +54,19 @@ public class TicketService : ITicketService
 
     public async Task<Result> AddTicketAsync(TicketEntity newTicket)
     {
-        // İŞ KURALI 1: Biletin ekleneceği Etkinlik (Event) gerçekten var mı?
-        var existingEvent = await _eventRepository.GetByIdAsync(newTicket.EventId);
-        if (existingEvent == null)
+        // 1. FluentValidation Kontrolü
+        var validationResult = await _validator.ValidateAsync(newTicket);
+        if (!validationResult.IsValid)
         {
-            return Result.Failure("Hata: Bilet eklemeye çalıştığınız etkinlik veritabanında bulunamadı!");
+            var errorMessage = string.Join(" | ", validationResult.Errors.Select(e => e.ErrorMessage));
+            return Result.Failure(errorMessage);
         }
 
-        // İŞ KURALI 2: Fiyat ve Kapasite mantıklı mı? (Validasyonların fragmanı)
-        if (newTicket.Price < 0) return Result.Failure("Bilet fiyatı 0'dan küçük olamaz.");
-        
-        // Her şey yolundaysa kaydet
+        // 2. Veritabanı Kontrolü (Etkinlik var mı?)
+        var existingEvent = await _eventRepository.GetByIdAsync(newTicket.EventId);
+        if (existingEvent == null)
+            return Result.Failure("Hata: Bilet eklemeye çalıştığınız etkinlik veritabanında bulunamadı!");
+
         await _ticketRepository.AddAsync(newTicket);
         await _ticketRepository.SaveChangesAsync();
 

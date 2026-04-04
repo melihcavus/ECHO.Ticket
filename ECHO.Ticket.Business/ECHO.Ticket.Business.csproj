@@ -11,4 +11,8 @@
       <ProjectReference Include="..\ECHO.Ticket.DataAccess\ECHO.Ticket.DataAccess.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="8.6.3" />
+    </ItemGroup>
+
 </Project>
