@@ -6,6 +6,7 @@ namespace ECHO.Ticket.Business.Interfaces;
 
 public interface IUserService
 {
+    Task<Result<string>> LoginAsync(UserLoginDto loginDto);
     Task<Result<IEnumerable<User>>> GetAllUsersAsync();
     Task<Result<User>> GetUserByIdAsync(Guid id);
     Task<Result> AddUserAsync(UserCreateDto userDto);   

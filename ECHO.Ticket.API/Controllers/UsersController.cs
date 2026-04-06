@@ -16,6 +16,22 @@ public class UsersController : ControllerBase
         _userService = userService;
     }
 
+    [HttpPost("login")] // İstek adresi: POST /api/Users/login olacak
+    public async Task<IActionResult> Login([FromBody] UserLoginDto loginDto)
+    {
+        // Servisteki LoginAsync metodumuzu çağırıyoruz
+        var result = await _userService.LoginAsync(loginDto);
+
+        // Eğer giriş başarısızsa (e-posta yoksa veya şifre yanlışsa) 400 Bad Request dön
+        if (!result.IsSuccess)
+        {
+            return BadRequest(result);
+        }
+
+        // Her şey doğruysa 200 OK ile birlikte üretilen Token'ı dön
+        return Ok(result);
+    }
+    
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {

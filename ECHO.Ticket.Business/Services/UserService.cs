@@ -12,11 +12,36 @@ public class UserService : IUserService
 {
     private readonly IRepository<UserEntity> _userRepository;
     private readonly IValidator<UserEntity> _validator;
+    private readonly IJwtProvider _jwtProvider;
 
-    public UserService(IRepository<UserEntity> userRepository, IValidator<UserEntity> validator)
+    public UserService(IRepository<UserEntity> userRepository, IValidator<UserEntity> validator, IJwtProvider jwtProvider)
     {
         _userRepository = userRepository;
         _validator = validator;
+        _jwtProvider = jwtProvider;
+    }
+    
+    public async Task<Result<string>> LoginAsync(UserLoginDto loginDto)
+    {
+        var users = await _userRepository.GetAllAsync(); 
+        var user = users.FirstOrDefault(u => u.Email == loginDto.Email);
+
+        if (user == null)
+        {
+            return Result<string>.Failure("Hata: Bu e-posta adresiyle kayıtlı bir kullanıcı bulunamadı.");
+        }
+
+        // 2. Şifreyi Kontrol Et (Şu an düz metin kontrol ediyoruz, ileride BCrypt ile şifreleyeceğiz)
+        if (user.PasswordHash != loginDto.Password)
+        {
+            return Result<string>.Failure("Hata: Girdiğiniz şifre yanlış.");
+        }
+
+        // 3. Her şey doğruysa Token Fabrikasına Emir Ver
+        var token = _jwtProvider.GenerateToken(user);
+
+        // 4. Token'ı Başarı Mesajıyla Birlikte Geri Dön
+        return Result<string>.Success(token, "Giriş başarılı! Token üretildi.");
     }
 
     public async Task<Result<IEnumerable<UserEntity>>> GetAllUsersAsync()
