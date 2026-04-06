@@ -1,4 +1,5 @@
 using ECHO.Ticket.Business.Interfaces;
+using ECHO.Ticket.Core.DTOs;
 using ECHO.Ticket.Core.Entities;
 using Microsoft.AspNetCore.Mvc;
 
@@ -38,13 +39,27 @@ public class EventsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] Event newEvent)
+    public async Task<IActionResult> Create([FromBody] EventCreateDto eventDto)
     {
-        var result = await _eventService.AddEventAsync(newEvent);
+        var result = await _eventService.AddEventAsync(eventDto);
         
         if (!result.IsSuccess)
             return BadRequest(result);
 
         return Ok(result);
+    }
+    
+    [HttpPut]
+    public async Task<IActionResult> Update([FromBody] EventUpdateDto eventDto)
+    {
+        var result = await _eventService.UpdateEventAsync(eventDto);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+    
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        var result = await _eventService.DeleteEventAsync(id);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 }

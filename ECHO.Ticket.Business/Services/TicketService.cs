@@ -1,8 +1,10 @@
 using ECHO.Ticket.Business.Interfaces;
+using ECHO.Ticket.Core.DTOs;
 using ECHO.Ticket.Core.Entities;
 using ECHO.Ticket.Core.Results;
 using ECHO.Ticket.DataAccess.Interfaces;
 using FluentValidation;
+using Mapster;
 using TicketEntity = ECHO.Ticket.Core.Entities.Ticket;
 
 namespace ECHO.Ticket.Business.Services;
@@ -52,9 +54,12 @@ public class TicketService : ITicketService
         return Result<TicketEntity>.Success(ticket);
     }
 
-    public async Task<Result> AddTicketAsync(TicketEntity newTicket)
+    public async Task<Result> AddTicketAsync(TicketCreateDto ticketDto)
     {
-        // 1. FluentValidation Kontrolü
+        // 1. DTO'yu Entity'e dönüştür
+        var newTicket = ticketDto.Adapt<TicketEntity>();
+
+        // 2. FluentValidation Kontrolü
         var validationResult = await _validator.ValidateAsync(newTicket);
         if (!validationResult.IsValid)
         {
@@ -62,7 +67,7 @@ public class TicketService : ITicketService
             return Result.Failure(errorMessage);
         }
 
-        // 2. Veritabanı Kontrolü (Etkinlik var mı?)
+        // 3. Business Kontrolü: Etkinlik var mı?
         var existingEvent = await _eventRepository.GetByIdAsync(newTicket.EventId);
         if (existingEvent == null)
             return Result.Failure("Hata: Bilet eklemeye çalıştığınız etkinlik veritabanında bulunamadı!");
@@ -71,5 +76,30 @@ public class TicketService : ITicketService
         await _ticketRepository.SaveChangesAsync();
 
         return Result.Success("Bilet/Paket başarıyla oluşturuldu.");
+    }
+    public async Task<Result> UpdateTicketAsync(TicketUpdateDto ticketDto)
+    {
+        var existingTicket = await _ticketRepository.GetByIdAsync(ticketDto.Id);
+        if (existingTicket == null) return Result.Failure("Güncellenecek bilet bulunamadı.");
+
+        ticketDto.Adapt(existingTicket);
+
+        var validationResult = await _validator.ValidateAsync(existingTicket);
+        if (!validationResult.IsValid)
+            return Result.Failure(string.Join(" | ", validationResult.Errors.Select(e => e.ErrorMessage)));
+
+        _ticketRepository.Update(existingTicket);
+        await _ticketRepository.SaveChangesAsync();
+        return Result.Success("Bilet başarıyla güncellendi.");
+    }
+
+    public async Task<Result> DeleteTicketAsync(Guid id)
+    {
+        var existingTicket = await _ticketRepository.GetByIdAsync(id);
+        if (existingTicket == null) return Result.Failure("Silinecek bilet bulunamadı.");
+
+        _ticketRepository.Remove(existingTicket);
+        await _ticketRepository.SaveChangesAsync();
+        return Result.Success("Bilet başarıyla silindi.");
     }
 }

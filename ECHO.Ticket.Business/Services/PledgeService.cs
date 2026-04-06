@@ -1,7 +1,9 @@
 using ECHO.Ticket.Business.Interfaces;
+using ECHO.Ticket.Core.DTOs;
 using ECHO.Ticket.Core.Results;
 using ECHO.Ticket.DataAccess.Interfaces;
 using FluentValidation;
+using Mapster;
 using PledgeEntity = ECHO.Ticket.Core.Entities.Pledge;
 using UserEntity = ECHO.Ticket.Core.Entities.User;
 using TicketEntity = ECHO.Ticket.Core.Entities.Ticket;
@@ -53,17 +55,11 @@ public class PledgeService : IPledgeService
         return Result<IEnumerable<PledgeEntity>>.Success(userPledges);
     }
 
-    public async Task<Result> AddPledgeAsync(PledgeEntity newPledge)
+    public async Task<Result> AddPledgeAsync(PledgeCreateDto pledgeDto)
     {
-        // 1. FluentValidation Kontrolü (ID'ler boş mu vb.)
-        var validationResult = await _validator.ValidateAsync(newPledge);
-        if (!validationResult.IsValid)
-        {
-            var errorMessage = string.Join(" | ", validationResult.Errors.Select(e => e.ErrorMessage));
-            return Result.Failure(errorMessage);
-        }
+        var newPledge = pledgeDto.Adapt<PledgeEntity>();
 
-        // 2. Veritabanı Kontrolleri
+        // 1. Veritabanı kontrolleri
         var user = await _userRepository.GetByIdAsync(newPledge.UserId);
         if (user == null)
             return Result.Failure("Hata: Destek yapmak isteyen kullanıcı sistemde bulunamadı!");
@@ -72,9 +68,27 @@ public class PledgeService : IPledgeService
         if (ticket == null)
             return Result.Failure("Hata: Satın alınmak istenen bilet/paket sistemde bulunamadı!");
 
+        // 2. OTOMATİK FİYAT ATAMASI 
+        newPledge.AmountPaid = ticket.Price; // Veritabanındaki biletin kendi fiyatını basıyoruz!
+        newPledge.PledgeDate = DateTime.UtcNow;
+
+        // 3. Validasyon ve Kayıt
+        var validationResult = await _validator.ValidateAsync(newPledge);
+        if (!validationResult.IsValid)
+            return Result.Failure(string.Join(" | ", validationResult.Errors.Select(e => e.ErrorMessage)));
+
         await _pledgeRepository.AddAsync(newPledge);
         await _pledgeRepository.SaveChangesAsync();
 
-        return Result.Success("Destek işlemi başarıyla tamamlandı.");
+        return Result.Success("Satın alma işlemi başarıyla tamamlandı.");
+    }
+    public async Task<Result> DeletePledgeAsync(Guid id)
+    {
+        var existingPledge = await _pledgeRepository.GetByIdAsync(id);
+        if (existingPledge == null) return Result.Failure("İptal edilecek destek (Pledge) bulunamadı.");
+
+        _pledgeRepository.Remove(existingPledge);
+        await _pledgeRepository.SaveChangesAsync();
+        return Result.Success("Destek başarıyla iptal edildi.");
     }
 }

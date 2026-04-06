@@ -2,6 +2,8 @@ using ECHO.Ticket.Business.Interfaces;
 using ECHO.Ticket.Core.Results;
 using ECHO.Ticket.DataAccess.Interfaces;
 using FluentValidation;
+using Mapster;  
+using ECHO.Ticket.Core.DTOs;
 using UserEntity = ECHO.Ticket.Core.Entities.User;
 
 namespace ECHO.Ticket.Business.Services;
@@ -33,9 +35,17 @@ public class UserService : IUserService
         return Result<UserEntity>.Success(user);
     }
 
-    public async Task<Result> AddUserAsync(UserEntity newUser)
+    public async Task<Result> AddUserAsync(UserCreateDto userDto)
     {
-        // 1. FluentValidation Kontrolü (Email formatı doğru mu vb.)
+        // 1. Mapster Sihri: DTO'yu User Entity'sine dönüştür
+        var newUser = userDto.Adapt<UserEntity>();
+    
+        // DTO'da olmayan, bizim arka planda doldurmamız gereken değerler:
+        newUser.CreatedAt = DateTime.UtcNow;
+        newUser.IsActive = true;
+        
+
+        // 2. Validator Kontrolü (Artık Entity üzerinden çalışıyor)
         var validationResult = await _validator.ValidateAsync(newUser);
         if (!validationResult.IsValid)
         {
@@ -43,7 +53,7 @@ public class UserService : IUserService
             return Result.Failure(errorMessage);
         }
 
-        // 2. Veritabanı Kontrolü (Email daha önce alınmış mı?)
+        // 3. E-posta Kontrolü
         var allUsers = await _userRepository.GetAllAsync();
         if (allUsers.Any(u => u.Email == newUser.Email))
             return Result.Failure("Bu e-posta adresi ile zaten bir kayıt mevcut!");
@@ -52,5 +62,30 @@ public class UserService : IUserService
         await _userRepository.SaveChangesAsync();
 
         return Result.Success("Kullanıcı başarıyla oluşturuldu.");
+    }
+    public async Task<Result> UpdateUserAsync(UserUpdateDto userDto)
+    {
+        var existingUser = await _userRepository.GetByIdAsync(userDto.Id);
+        if (existingUser == null) return Result.Failure("Güncellenecek kullanıcı bulunamadı.");
+
+        userDto.Adapt(existingUser);
+
+        var validationResult = await _validator.ValidateAsync(existingUser);
+        if (!validationResult.IsValid)
+            return Result.Failure(string.Join(" | ", validationResult.Errors.Select(e => e.ErrorMessage)));
+
+        _userRepository.Update(existingUser);
+        await _userRepository.SaveChangesAsync();
+        return Result.Success("Kullanıcı başarıyla güncellendi.");
+    }
+
+    public async Task<Result> DeleteUserAsync(Guid id)
+    {
+        var existingUser = await _userRepository.GetByIdAsync(id);
+        if (existingUser == null) return Result.Failure("Silinecek kullanıcı bulunamadı.");
+
+        _userRepository.Remove(existingUser);
+        await _userRepository.SaveChangesAsync();
+        return Result.Success("Kullanıcı başarıyla silindi.");
     }
 }

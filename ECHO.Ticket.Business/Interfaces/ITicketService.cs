@@ -1,3 +1,4 @@
+using ECHO.Ticket.Core.DTOs;
 using ECHO.Ticket.Core.Entities;
 using ECHO.Ticket.Core.Results;
 
@@ -10,5 +11,7 @@ public interface ITicketService
     Task<Result<IEnumerable<TicketEntity>>> GetAllTicketsAsync();
     Task<Result<IEnumerable<TicketEntity>>> GetTicketsByEventIdAsync(Guid eventId); // Sadece bir etkinliğe ait biletleri getirme
     Task<Result<TicketEntity>> GetTicketByIdAsync(Guid id);
-    Task<Result> AddTicketAsync(TicketEntity newTicket);
+    Task<Result> AddTicketAsync(TicketCreateDto ticketDto);
+    Task<Result> UpdateTicketAsync(TicketUpdateDto ticketDto);
+    Task<Result> DeleteTicketAsync(Guid id);
 }

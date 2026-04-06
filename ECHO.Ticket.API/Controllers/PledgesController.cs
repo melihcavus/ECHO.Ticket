@@ -1,4 +1,5 @@
 using ECHO.Ticket.Business.Interfaces;
+using ECHO.Ticket.Core.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using PledgeEntity = ECHO.Ticket.Core.Entities.Pledge;
 
@@ -37,9 +38,16 @@ public class PledgesController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] PledgeEntity newPledge)
+    public async Task<IActionResult> Create([FromBody] PledgeCreateDto pledgeDto)
     {
-        var result = await _pledgeService.AddPledgeAsync(newPledge);
+        var result = await _pledgeService.AddPledgeAsync(pledgeDto);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+    
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        var result = await _pledgeService.DeletePledgeAsync(id);
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 }

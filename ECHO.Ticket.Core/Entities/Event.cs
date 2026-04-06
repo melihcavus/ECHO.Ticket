@@ -7,10 +7,6 @@ public class Event
     public string Description { get; set; } = string.Empty;
     public DateTime EventDate { get; set; } 
     public string Location { get; set; } = string.Empty;
-
-    //Fonlama/Biletleme Hedefleri
-    public int TotalTicketsCapacity { get; set; }
-    public decimal TicketPrice { get; set; }
     
     //Durum Kontrolü
     public bool IsActive { get; set; } = true;
