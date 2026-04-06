@@ -1,4 +1,5 @@
 using ECHO.Ticket.Business.Interfaces;
+using ECHO.Ticket.Core.Constants;
 using ECHO.Ticket.Core.DTOs;
 using ECHO.Ticket.Core.Entities;
 using Microsoft.AspNetCore.Authorization;
@@ -39,7 +40,7 @@ public class EventsController : ControllerBase
         return Ok(result); 
     }
 
-    [Authorize]
+    [Authorize(Roles = UserRoles.Organizer + "," + UserRoles.Admin)]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] EventCreateDto eventDto)
     {

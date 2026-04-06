@@ -35,7 +35,8 @@ public class JwtProvider : IJwtProvider
             new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new Claim(JwtRegisteredClaimNames.Email, user.Email),
             new Claim("FirstName", user.FirstName), // Adını da koyduk ki ekranda "Hoşgeldin Melih" yazabilelim
-            new Claim("LastName", user.LastName)
+            new Claim("LastName", user.LastName),
+            new Claim(ClaimTypes.Role, user.Role)
         };
 
         // 4. Biletin Tüm Kurallarını Belirleme

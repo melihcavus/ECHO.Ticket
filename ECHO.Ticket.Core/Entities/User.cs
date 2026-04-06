@@ -1,3 +1,5 @@
+using ECHO.Ticket.Core.Constants;
+
 namespace ECHO.Ticket.Core.Entities;
 
 public class User
@@ -9,4 +11,5 @@ public class User
     public string PasswordHash { get; set; } = String.Empty;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public bool IsActive { get; set; } = true;
+    public string Role { get; set; } = UserRoles.User;
 }
