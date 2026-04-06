@@ -13,12 +13,14 @@ public class UserService : IUserService
     private readonly IRepository<UserEntity> _userRepository;
     private readonly IValidator<UserEntity> _validator;
     private readonly IJwtProvider _jwtProvider;
+    private readonly IPasswordHasher _passwordHasher;
 
-    public UserService(IRepository<UserEntity> userRepository, IValidator<UserEntity> validator, IJwtProvider jwtProvider)
+    public UserService(IRepository<UserEntity> userRepository, IValidator<UserEntity> validator, IJwtProvider jwtProvider, IPasswordHasher passwordHasher)
     {
         _userRepository = userRepository;
         _validator = validator;
         _jwtProvider = jwtProvider;
+        _passwordHasher = passwordHasher;
     }
     
     public async Task<Result<string>> LoginAsync(UserLoginDto loginDto)
@@ -64,7 +66,9 @@ public class UserService : IUserService
     {
         // 1. Mapster Sihri: DTO'yu User Entity'sine dönüştür
         var newUser = userDto.Adapt<UserEntity>();
-    
+        
+        newUser.PasswordHash = _passwordHasher.HashPassword(userDto.PasswordHash);
+        
         // DTO'da olmayan, bizim arka planda doldurmamız gereken değerler:
         newUser.CreatedAt = DateTime.UtcNow;
         newUser.IsActive = true;

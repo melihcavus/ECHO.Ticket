@@ -1,5 +1,6 @@
 using System.Text;
 using ECHO.Ticket.Business.Interfaces;
+using ECHO.Ticket.Business.Security;
 using ECHO.Ticket.Business.Services;
 using ECHO.Ticket.Business.Services.Security;
 using ECHO.Ticket.Business.Validations;
@@ -81,6 +82,7 @@ builder.Services.AddScoped<ITicketService, TicketService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IPledgeService, PledgeService>();
 builder.Services.AddScoped<IJwtProvider, JwtProvider>();
+builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 
 var app = builder.Build();  
 
