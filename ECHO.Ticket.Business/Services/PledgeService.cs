@@ -16,17 +16,19 @@ public class PledgeService : IPledgeService
     private readonly IRepository<UserEntity> _userRepository;
     private readonly IRepository<TicketEntity> _ticketRepository;
     private readonly IValidator<PledgeEntity> _validator;
+    private readonly IWorkContext _workContext;
 
     public PledgeService(
         IRepository<PledgeEntity> pledgeRepository, 
         IRepository<UserEntity> userRepository, 
         IRepository<TicketEntity> ticketRepository,
-        IValidator<PledgeEntity> validator)
+        IValidator<PledgeEntity> validator, IWorkContext workContext)
     {
         _pledgeRepository = pledgeRepository;
         _userRepository = userRepository;
         _ticketRepository = ticketRepository;
         _validator = validator;
+        _workContext = workContext;
     }
 
     public async Task<Result<IEnumerable<PledgeEntity>>> GetAllPledgesAsync()
@@ -58,6 +60,9 @@ public class PledgeService : IPledgeService
     public async Task<Result> AddPledgeAsync(PledgeCreateDto pledgeDto)
     {
         var newPledge = pledgeDto.Adapt<PledgeEntity>();
+        
+        // DTO'dan ne gelirse gelsin önemi yok. Biz Token'daki GÜVENLİ ID'yi kullanıcının ID'si yapıyoruz.
+        newPledge.UserId = _workContext.UserId;
 
         // 1. Veritabanı kontrolleri
         var user = await _userRepository.GetByIdAsync(newPledge.UserId);
