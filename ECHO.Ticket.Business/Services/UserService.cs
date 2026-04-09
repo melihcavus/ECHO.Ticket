@@ -33,8 +33,11 @@ public class UserService : IUserService
             return Result<string>.Failure("Hata: Bu e-posta adresiyle kayıtlı bir kullanıcı bulunamadı.");
         }
 
-        // 2. Şifreyi Kontrol Et (Şu an düz metin kontrol ediyoruz, ileride BCrypt ile şifreleyeceğiz)
-        if (user.PasswordHash != loginDto.Password)
+        // 2. Şifreyi BCrypt ile Kontrol Et (ARTIK GÜVENLİ!)
+        // BCrypt.Verify metodu, kullanıcının girdiği düz şifre ile veritabanındaki hash'i karşılaştırır.
+        bool isPasswordValid = BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash);
+
+        if (!isPasswordValid)
         {
             return Result<string>.Failure("Hata: Girdiğiniz şifre yanlış.");
         }
