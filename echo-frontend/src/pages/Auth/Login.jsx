@@ -1,16 +1,20 @@
 import { Mail, Lock, EyeOff, Github, TrendingUp, Handshake, Users, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { loginUser } from '../../services/authService';
-import { Link } from 'react-router-dom';
-function App() {
-    // 1. Verileri Takip Eden State'ler
+import { useNavigate, Link } from 'react-router-dom';
+function Login() {
+    // 1. useNavigate'i BURADA, en üstte tanımlamalısın!
+    const navigate = useNavigate();
+
+    // 2. Verileri Takip Eden State'ler
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
 
-    // 2. Login Fonksiyonu (API İsteği)
+    // 3. Login Fonksiyonu (API İsteği)
     const handleLogin = async (e) => {
-        e.preventDefault(); // Sayfanın yenilenmesini engelle
+        e.preventDefault();
+
         if (!email || !password) {
             alert("Lütfen tüm alanları doldurun!");
             return;
@@ -19,14 +23,16 @@ function App() {
         setLoading(true);
         try {
             const response = await loginUser(email, password);
-            
+
             const token = response.data.token;
             localStorage.setItem('token', token); // Token'ı tarayıcı hafızasına al
 
             alert("Giriş Başarılı! ECHO sistemine yönlendiriliyorsunuz.");
             console.log("Gelen Token:", token);
 
-            // Başarılıysa yönlendirme yapılabilir (window.location.href = '/dashboard' gibi)
+            // Yukarıda tanımladığımız navigate'i burada sadece ÇAĞIRIYORUZ
+            navigate('/dashboard');
+
         } catch (error) {
             console.error("Giriş Hatası:", error);
             const errorMessage = error.response?.data?.message || "E-posta veya şifre hatalı!";
@@ -147,4 +153,4 @@ function App() {
     );
 }
 
-export default App;
+export default Login;

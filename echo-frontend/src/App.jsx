@@ -1,19 +1,32 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Auth/Login';
 import SignUp from './pages/Auth/SignUp';
+import Dashboard from './pages/Dashboard/Dashboard';
+import ProtectedRoute from './components/ProtectedRoute'; // Güvenlik duvarımızı import ettik
 
 function App() {
     return (
         <BrowserRouter>
             <Routes>
-                {/* Kullanıcı siteye ilk girdiğinde direkt login sayfasına yönlendirilsin */}
+                {/* Ana sayfaya gireni direkt logine at */}
                 <Route path="/" element={<Navigate to="/login" />} />
 
-                {/* URL'de /login yazarsa Login sayfasını (bileşenini) aç */}
+                {/* Açık Rotalar (Herkes girebilir) */}
                 <Route path="/login" element={<Login />} />
-
-                {/* URL'de /signup yazarsa SignUp sayfasını aç */}
                 <Route path="/signup" element={<SignUp />} />
+
+                {/* Korumalı Rota (Sadece Token'ı olanlar girebilir) */}
+                <Route
+                    path="/dashboard"
+                    element={
+                        <ProtectedRoute>
+                            <Dashboard />
+                        </ProtectedRoute>
+                    }
+                />
+
+                {/* 404 Catch-All: Eğer yukarıdaki adresler dışında saçma bir şey (/dashboar gibi) girilirse, logine at */}
+                <Route path="*" element={<Navigate to="/login" />} />
             </Routes>
         </BrowserRouter>
     );
