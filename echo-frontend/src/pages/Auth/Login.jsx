@@ -2,11 +2,13 @@ import { Mail, Lock, EyeOff, Github, TrendingUp, Handshake, Users, Loader2 } fro
 import { useState } from 'react';
 import { loginUser } from '../../services/authService';
 import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 function Login() {
     // 1. useNavigate'i BURADA, en üstte tanımlamalısın!
     const navigate = useNavigate();
 
     // 2. Verileri Takip Eden State'ler
+    const { login } = useAuth(); // Context'ten login fonksiyonunu çektik
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
@@ -23,14 +25,10 @@ function Login() {
         setLoading(true);
         try {
             const response = await loginUser(email, password);
-
             const token = response.data.data.token || response.data.data;
-            localStorage.setItem('token', token); // Token'ı tarayıcı hafızasına al
+            login(token);
 
             alert("Giriş Başarılı! ECHO sistemine yönlendiriliyorsunuz.");
-            console.log("Gelen Token:", token);
-
-            // Yukarıda tanımladığımız navigate'i burada sadece ÇAĞIRIYORUZ
             navigate('/dashboard');
 
         } catch (error) {

@@ -1,48 +1,34 @@
 import { useNavigate } from 'react-router-dom';
-import api from '../../services/api'; // api.js'i içeri aktardık
+import { useAuth } from '../../context/AuthContext'; // Context'i çağırdık
 
 function Dashboard() {
     const navigate = useNavigate();
+    const { user, logout } = useAuth(); // Kullanıcı bilgilerini ve logout fonksiyonunu çektik
 
     const handleLogout = () => {
-        localStorage.removeItem('token');
+        logout(); // Artık Context'teki temiz ve güvenli logout'u kullanıyoruz
         navigate('/login');
     };
 
-    // TEST FONKSİYONU
-    const handleTestApi = async () => {
-        try {
-            // Sadece /Users yazıyoruz, baseURL ve Token'ı api.js halledecek
-            const response = await api.get('/Users');
-            console.log("Backend'den Gelen Cevap:", response.data);
-            alert("İstek başarılı! Konsolu kontrol et.");
-        } catch (error) {
-            console.error("Test Hatası:", error);
-        }
-    };
-
     return (
-        <div className="min-h-screen bg-gray-100 p-10">
-            <div className="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-md">
-                <h1 className="text-3xl font-bold text-slate-800 mb-4">ECHO Dashboard'a Hoş Geldin!</h1>
-                <p className="text-slate-600 mb-8">Giriş işlemini başarıyla tamamladın ve korumalı alana girdin.</p>
+        <div className="min-h-screen bg-[#0B1325] p-10 font-sans">
+            <div className="max-w-4xl mx-auto bg-[#111C3A] p-8 rounded-[2rem] shadow-2xl border border-white/5">
 
-                <div className="flex gap-4">
-                    <button
-                        onClick={handleLogout}
-                        className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-                    >
-                        Çıkış Yap
-                    </button>
+                {/* Kullanıcıya özel karşılama */}
+                <h1 className="text-4xl font-bold text-white mb-2">
+                    Hoş geldin, <span className="text-cyan-400">{user?.firstName} {user?.lastName}</span>! 👋
+                </h1>
 
-                    {/* TEST BUTONU */}
-                    <button
-                        onClick={handleTestApi}
-                        className="px-4 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors"
-                    >
-                        API'ye Token Gönder
-                    </button>
-                </div>
+                <p className="text-cyan-200/60 mb-8">
+                    Giriş işlemini başarıyla tamamladın. Rolün: <strong className="text-white">{user?.role}</strong>
+                </p>
+
+                <button
+                    onClick={handleLogout}
+                    className="px-6 py-3 bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl hover:bg-red-500/20 transition-all font-semibold"
+                >
+                    Güvenli Çıkış Yap
+                </button>
             </div>
         </div>
     );
