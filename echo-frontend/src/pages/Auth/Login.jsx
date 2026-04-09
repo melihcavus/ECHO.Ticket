@@ -24,7 +24,7 @@ function Login() {
         try {
             const response = await loginUser(email, password);
 
-            const token = response.data.token;
+            const token = response.data.data.token || response.data.data;
             localStorage.setItem('token', token); // Token'ı tarayıcı hafızasına al
 
             alert("Giriş Başarılı! ECHO sistemine yönlendiriliyorsunuz.");
