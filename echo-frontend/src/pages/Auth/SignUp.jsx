@@ -62,9 +62,9 @@ function SignUp() {
                         <h1 className="text-6xl md:text-8xl font-extrabold text-white tracking-tight mb-3">
                             <span className="text-cyan-400">|||</span> ECHO
                         </h1>
-                        <p className="text-2xl text-cyan-100/90 font-medium mb-1">Crowd-Pledging Platform</p>
-                        <p className="text-cyan-200/60 text-lg mb-8">| Amplify Your Support</p>
-                        <p className="text-sm text-slate-400 mt-10 max-w-md">Join us today.<br/>Support the projects you love.<br/>Raise funds for your cause.</p>
+                        <p className="text-2xl text-cyan-100/90 font-medium mb-1">Kitle Fonlama Platformu</p>
+                        <p className="text-cyan-200/60 text-lg mb-8">| Desteğinizi Büyütün</p>
+                        <p className="text-sm text-slate-400 mt-10 max-w-md">Bugün bize katılın.<br/>Sevdiğiniz projeleri destekleyin.<br/>Amacınız için fon toplayın.</p>
                     </div>
 
                     <div className="absolute -bottom-10 -right-10 flex items-center gap-6 text-cyan-500/20 pointer-events-none">
@@ -82,8 +82,8 @@ function SignUp() {
                     <div className="bg-white h-full rounded-[1.5rem] p-8 lg:p-10 flex flex-col justify-center shadow-inner relative overflow-hidden">
 
                         <div className="text-center mb-8">
-                            <h2 className="text-3xl lg:text-4xl font-bold text-slate-900">Create Account</h2>
-                            <p className="text-slate-600 mt-2 text-md">Join ECHO to get started.</p>
+                            <h2 className="text-3xl lg:text-4xl font-bold text-slate-900">Hesap Oluştur</h2>
+                            <p className="text-slate-600 mt-2 text-md">Başlamak için ECHO'ya katılın.</p>
                         </div>
 
                         <form onSubmit={handleSignUp} className="space-y-4">
@@ -97,7 +97,7 @@ function SignUp() {
                                         required
                                         value={firstName}
                                         onChange={(e) => setFirstName(e.target.value)}
-                                        placeholder="First Name"
+                                        placeholder="Adınız"
                                         className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-md focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:bg-white transition-all shadow-sm"
                                     />
                                 </div>
@@ -108,7 +108,7 @@ function SignUp() {
                                         required
                                         value={lastName}
                                         onChange={(e) => setLastName(e.target.value)}
-                                        placeholder="Last Name"
+                                        placeholder="Soyadınız"
                                         className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-md focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:bg-white transition-all shadow-sm"
                                     />
                                 </div>
@@ -121,7 +121,7 @@ function SignUp() {
                                     required
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="Email Address"
+                                    placeholder="E-posta Adresi"
                                     className="w-full pl-11 pr-5 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-md focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:bg-white transition-all shadow-sm"
                                 />
                             </div>
@@ -133,7 +133,7 @@ function SignUp() {
                                     required
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    placeholder="Password"
+                                    placeholder="Şifre"
                                     className="w-full pl-11 pr-11 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-md focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:bg-white transition-all shadow-sm"
                                 />
                                 <EyeOff className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 cursor-pointer hover:text-slate-700" />
@@ -145,14 +145,14 @@ function SignUp() {
                                 className="w-full py-3.5 mt-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-2xl font-bold text-lg shadow-lg shadow-cyan-500/30 transition-all active:scale-[0.98] flex justify-center items-center gap-2"
                             >
                                 {loading && <Loader2 className="animate-spin w-5 h-5" />}
-                                {loading ? 'Creating...' : 'Sign Up'}
+                                {loading ? 'Oluşturuluyor...' : 'Kayıt Ol'}
                             </button>
                         </form>
 
                         <div className="mt-8">
                             <div className="relative flex items-center justify-center mb-5">
                                 <div className="border-t border-slate-200 w-full absolute"></div>
-                                <span className="bg-white px-4 text-sm text-slate-400 relative">Or sign up with</span>
+                                <span className="bg-white px-4 text-sm text-slate-400 relative">Veya şununla kayıt olun</span>
                             </div>
 
                             <div className="flex justify-center gap-4">
@@ -166,7 +166,7 @@ function SignUp() {
                         </div>
 
                         <p className="text-center text-sm lg:text-base text-slate-600 mt-8">
-                            Already have an account? <a href="/login" className="text-cyan-600 font-bold hover:underline">Login.</a>
+                            Zaten bir hesabınız var mı? <a href="/login" className="text-cyan-600 font-bold hover:underline">Giriş yapın.</a>
                         </p>
 
                     </div>

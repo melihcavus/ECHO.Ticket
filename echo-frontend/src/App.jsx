@@ -1,3 +1,4 @@
+import Home from './pages/Home/Home';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Auth/Login';
 import SignUp from './pages/Auth/SignUp';
@@ -11,7 +12,9 @@ function App() {
         <AuthProvider>
             <BrowserRouter>
                 <Routes>
-                    <Route path="/" element={<Navigate to="/login" />} />
+                    {/* Ana sayfaya girene artık Home componentini gösteriyoruz */}
+                    <Route path="/" element={<Home />} />
+
                     <Route path="/login" element={<Login />} />
                     <Route path="/signup" element={<SignUp />} />
 
@@ -23,7 +26,7 @@ function App() {
                             </ProtectedRoute>
                         }
                     />
-                    <Route path="*" element={<Navigate to="/login" />} />
+                    <Route path="*" element={<Navigate to="/" />} /> {/* Yanlış adreste de Home'a atalım */}
                 </Routes>
             </BrowserRouter>
         </AuthProvider>

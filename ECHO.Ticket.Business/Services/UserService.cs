@@ -120,4 +120,5 @@ public class UserService : IUserService
         await _userRepository.SaveChangesAsync();
         return Result.Success("Kullanıcı başarıyla silindi.");
     }
+    
 }
