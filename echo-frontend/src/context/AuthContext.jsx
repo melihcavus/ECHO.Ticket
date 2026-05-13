@@ -16,6 +16,7 @@ export const AuthProvider = ({ children }) => {
                 // Token'ı çöz ve içindeki bilgileri state'e kaydet
                 const decoded = jwtDecode(token);
                 setUser({
+                    id: decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"] || decoded.id || decoded.sub, // .NET Core'un default ID claim'i
                     firstName: decoded.FirstName,
                     lastName: decoded.LastName,
                     email: decoded.email,

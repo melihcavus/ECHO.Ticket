@@ -11,4 +11,5 @@ public interface IEventService
     Task<Result> AddEventAsync(EventCreateDto eventDto); // Sadece başarılı/başarısız döneceği için Data yok (Result)
     Task<Result> UpdateEventAsync(EventUpdateDto eventDto);
     Task<Result> DeleteEventAsync(Guid id);
+    Task<Result<IEnumerable<EventSummaryDto>>> GetActiveEventsSummaryAsync();
 }

@@ -5,6 +5,7 @@ import SignUp from './pages/Auth/SignUp';
 import Dashboard from './pages/Dashboard/Dashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext'; // Context'i import ettik
+import Explore from './pages/Explore/Explore';
 
 function App() {
     return (
@@ -17,7 +18,14 @@ function App() {
 
                     <Route path="/login" element={<Login />} />
                     <Route path="/signup" element={<SignUp />} />
-
+                    <Route
+                        path="/explore"
+                        element={
+                            <ProtectedRoute>
+                                <Explore />
+                            </ProtectedRoute>
+                        }
+                    />
                     <Route
                         path="/dashboard"
                         element={

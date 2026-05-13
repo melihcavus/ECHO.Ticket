@@ -84,4 +84,26 @@ public class EventService : IEventService
         await _eventRepository.SaveChangesAsync();
         return Result.Success("Etkinlik başarıyla silindi.");
     }
+    public async Task<Result<IEnumerable<EventSummaryDto>>> GetActiveEventsSummaryAsync()
+    {
+        try
+        {
+            // Sadece aktif ve tarihi geçmemiş etkinlikleri getir
+            var activeEvents = await _eventRepository.FindAsync(e => e.IsActive && e.EventDate > DateTime.UtcNow);
+        
+            var summaryList = activeEvents.Select(e => new EventSummaryDto
+            {
+                EventId = e.Id,
+                EventName = e.Title, // Entity'deki adın Title olduğunu varsayarak
+                EventDate = e.EventDate,
+                TotalPledgeAmount = 0 // Şimdilik 0, ileride Pledge tablosuyla birleştirilip hesaplanacak
+            }).ToList();
+
+            return Result<IEnumerable<EventSummaryDto>>.Success(summaryList);
+        }
+        catch (Exception ex)
+        {
+            return Result<IEnumerable<EventSummaryDto>>.Failure($"Etkinlikler getirilirken hata oluştu: {ex.Message}");
+        }
+    }
 }

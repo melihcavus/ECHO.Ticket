@@ -65,4 +65,15 @@ public class EventsController : ControllerBase
         var result = await _eventService.DeleteEventAsync(id);
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
+    
+    [HttpGet("explore")]
+    public async Task<IActionResult> GetExploreEvents()
+    {
+        var result = await _eventService.GetActiveEventsSummaryAsync();
+    
+        if (!result.IsSuccess)
+            return BadRequest(result);
+
+        return Ok(result);
+    }
 }
