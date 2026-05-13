@@ -14,12 +14,21 @@ public class EventServiceTests
     private readonly Mock<IRepository<Event>> _eventRepositoryMock;
     private readonly Mock<IValidator<Event>> _validatorMock;
     private readonly EventService _eventService;
+    private readonly Mock<IRepository<Core.Entities.Ticket>> _ticketRepositoryMock;
 
-    public EventServiceTests()
+    // Constructor dışarıdan parametre ALMAMALI
+    public EventServiceTests() 
     {
+        // 1. Mock'ları içeride new'leyerek başlatıyoruz
         _eventRepositoryMock = new Mock<IRepository<Event>>();
         _validatorMock = new Mock<IValidator<Event>>();
-        _eventService = new EventService(_eventRepositoryMock.Object, _validatorMock.Object);
+        _ticketRepositoryMock = new Mock<IRepository<Core.Entities.Ticket>>(); 
+
+        // 2. Servisi oluştururken üç mock nesnesinin Object halini sırayla veriyoruz
+        _eventService = new EventService(
+            _eventRepositoryMock.Object, 
+            _validatorMock.Object, 
+            _ticketRepositoryMock.Object); // 3. parametre buraya eklendi!
     }
 
     [Fact]

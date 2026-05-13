@@ -5,7 +5,8 @@ import SignUp from './pages/Auth/SignUp';
 import Dashboard from './pages/Dashboard/Dashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext'; // Context'i import ettik
-import Explore from './pages/Explore/Explore';
+import Explore from './pages/Explore/Explore.jsx';
+import EventDetail from './pages/Explore/EventDetail.jsx';
 
 function App() {
     return (
@@ -23,6 +24,14 @@ function App() {
                         element={
                             <ProtectedRoute>
                                 <Explore />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/event/:id"
+                        element={
+                            <ProtectedRoute>
+                                <EventDetail />
                             </ProtectedRoute>
                         }
                     />

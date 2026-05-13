@@ -12,4 +12,5 @@ public interface IEventService
     Task<Result> UpdateEventAsync(EventUpdateDto eventDto);
     Task<Result> DeleteEventAsync(Guid id);
     Task<Result<IEnumerable<EventSummaryDto>>> GetActiveEventsSummaryAsync();
+    Task<Result<EventDetailDto>> GetEventDetailAsync(Guid id);
 }

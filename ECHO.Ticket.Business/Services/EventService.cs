@@ -12,12 +12,13 @@ public class EventService : IEventService
 {
     private readonly IRepository<Event> _eventRepository;
     private readonly IValidator<Event> _validator; // Validator'ı içeri alıyoruz
-
+    private readonly IRepository<Core.Entities.Ticket> _ticketRepository;
     // Constructor'a IValidator'ı ekledik
-    public EventService(IRepository<Event> eventRepository, IValidator<Event> validator)
+    public EventService(IRepository<Event> eventRepository, IValidator<Event> validator, IRepository<Core.Entities.Ticket> ticketRepository)
     {
         _eventRepository = eventRepository;
         _validator = validator;
+        _ticketRepository = ticketRepository;
     }
 
     public async Task<Result<IEnumerable<Event>>> GetAllEventsAsync()
@@ -104,6 +105,44 @@ public class EventService : IEventService
         catch (Exception ex)
         {
             return Result<IEnumerable<EventSummaryDto>>.Failure($"Etkinlikler getirilirken hata oluştu: {ex.Message}");
+        }
+    }
+    public async Task<Result<EventDetailDto>> GetEventDetailAsync(Guid id)
+    {
+        try
+        {
+            // _repository yerine _eventRepository kullanıyoruz
+            var eventEntity = await _eventRepository.GetByIdAsync(id);
+            if (eventEntity == null || !eventEntity.IsActive)
+                return Result<EventDetailDto>.Failure("Etkinlik bulunamadı veya artık aktif değil.");
+
+            // Artık constructor'da tanımlı olan _ticketRepository'yi kullanıyoruz
+            var tickets = await _ticketRepository.FindAsync(t => t.EventId == id && t.IsActive);
+
+            var eventDetail = new EventDetailDto
+            {
+                EventId = eventEntity.Id,
+                Title = eventEntity.Title,
+                Description = eventEntity.Description,
+                EventDate = eventEntity.EventDate,
+                Location = eventEntity.Location,
+                OrganizerName = "Organizatör", // İleride User tablosundan eklenecek
+                Tickets = tickets.Select(t => new TicketDto
+                {
+                    TicketId = t.Id,
+                    Name = t.Name,
+                    Description = t.Description,
+                    Price = t.Price,
+                    Capacity = t.Capacity,
+                    RemainingCapacity = t.Capacity 
+                }).ToList()
+            };
+
+            return Result<EventDetailDto>.Success(eventDetail);
+        }
+        catch (Exception ex)
+        {
+            return Result<EventDetailDto>.Failure($"Etkinlik detayı getirilirken hata: {ex.Message}");
         }
     }
 }

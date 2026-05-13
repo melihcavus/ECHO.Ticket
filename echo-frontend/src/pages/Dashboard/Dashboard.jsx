@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import Sidebar from '../../components/Sidebar'; // YENİ SİDEBAR BİLEŞENİ
 import {
-    LayoutDashboard,
     Ticket,
     FolderHeart,
     Wallet,
-    Settings,
-    LogOut,
     TrendingUp,
     Search,
     CalendarDays,
@@ -16,7 +14,7 @@ import {
 
 function Dashboard() {
     const navigate = useNavigate();
-    const { user, logout } = useAuth();
+    const { user } = useAuth(); // logout fonksiyonunu Sidebar'a taşıdığımız için buradan sildik
 
     // Dinamik Veri State'leri (recentActivities eklendi)
     const [summaryData, setSummaryData] = useState({
@@ -31,20 +29,20 @@ function Dashboard() {
     // API'den İstatistikleri Çekme
     useEffect(() => {
         const fetchDashboardSummary = async () => {
-            // Artık AuthContext'ten id de gelecek, eğer yoksa istek atma
             if (!user?.id) {
+                setIsLoading(false);
+                setError("Kullanıcı kimliği bulunamadı. Lütfen tekrar giriş yapın.");
                 return;
             }
 
             setIsLoading(true);
             try {
-                // Token'ı localStorage'dan alıyoruz (ProtectedRoute'un onayladığı token)
                 const token = localStorage.getItem('token');
 
                 const response = await fetch(`http://localhost:5216/api/dashboard/summary/${user.id}`, {
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}` // Token entegrasyonu aktif edildi!
+                        'Authorization': `Bearer ${token}`
                     }
                 });
 
@@ -68,62 +66,13 @@ function Dashboard() {
         };
 
         fetchDashboardSummary();
-    }, [user?.id]); // id değiştiğinde veya dolduğunda effect tetiklenir
-
-    const handleLogout = () => {
-        logout();
-        navigate('/login');
-    };
+    }, [user?.id]);
 
     return (
         <div className="min-h-screen bg-[#0B1325] flex font-sans text-slate-200">
 
-            {/* SOL MENÜ (SIDEBAR) */}
-            <aside className="w-64 bg-[#111C3A] border-r border-white/5 flex flex-col justify-between hidden md:flex z-20">
-                <div>
-                    {/* Logo Alanı */}
-                    <div className="h-24 flex items-center px-8 border-b border-white/5">
-                        <span className="text-white text-2xl font-bold flex items-center gap-2 tracking-wide">
-                            <span className="text-cyan-400">|||</span> ECHO
-                        </span>
-                    </div>
-
-                    {/* Menü Linkleri */}
-                    <nav className="p-4 space-y-2 mt-4">
-                        <a href="#" className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-xl shadow-lg shadow-cyan-900/20 transition-all">
-                            <LayoutDashboard size={20} />
-                            <span className="font-medium">Genel Bakış</span>
-                        </a>
-                        <a href="#" className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-[#1A2744] rounded-xl transition-all">
-                            <FolderHeart size={20} />
-                            <span className="font-medium">Desteklerim</span>
-                        </a>
-                        <a href="#" className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-[#1A2744] rounded-xl transition-all">
-                            <Ticket size={20} />
-                            <span className="font-medium">Biletlerim</span>
-                        </a>
-                        <a href="#" className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-[#1A2744] rounded-xl transition-all">
-                            <Wallet size={20} />
-                            <span className="font-medium">İşlemler</span>
-                        </a>
-                    </nav>
-                </div>
-
-                {/* Alt Menü & Çıkış */}
-                <div className="p-4 border-t border-white/5 space-y-2 bg-[#0D162B]">
-                    <a href="#" className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-[#1A2744] rounded-xl transition-all">
-                        <Settings size={20} />
-                        <span className="font-medium">Ayarlar</span>
-                    </a>
-                    <button
-                        onClick={handleLogout}
-                        className="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-xl transition-all"
-                    >
-                        <LogOut size={20} />
-                        <span className="font-medium">Çıkış Yap</span>
-                    </button>
-                </div>
-            </aside>
+            {/* YENİ OLUŞTURDUĞUMUZ MERKEZİ SIDEBAR */}
+            <Sidebar activeMenu="dashboard" />
 
             {/* ANA İÇERİK ALANI */}
             <main className="flex-1 flex flex-col h-screen overflow-hidden">
@@ -275,7 +224,6 @@ function Dashboard() {
                             <h3 className="text-xl font-bold text-white mb-2">Son Etkinlik Yok</h3>
                             <p className="text-slate-400 max-w-sm mb-6">Son zamanlarda herhangi bir kampanyayı desteklemedin veya bilet almadın. Başlamak için platformu keşfet!</p>
 
-                            {/* YÖNLENDİRME (ONCLICK) BURAYA EKLENDİ */}
                             <button
                                 onClick={() => navigate('/explore')}
                                 className="px-6 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-colors font-medium border border-white/10"

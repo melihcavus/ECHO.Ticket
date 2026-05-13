@@ -34,6 +34,8 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('token', token);
         const decoded = jwtDecode(token);
         setUser({
+            // BURAYA ID SATIRINI EKLİYORUZ (useEffect'teki ile aynı)
+            id: decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"] || decoded.id || decoded.sub,
             firstName: decoded.FirstName,
             lastName: decoded.LastName,
             email: decoded.email,
