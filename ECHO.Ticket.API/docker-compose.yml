@@ -6,13 +6,24 @@ services:
     container_name: echo_postgres
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 123456 
+      POSTGRES_PASSWORD: 123456
       POSTGRES_DB: EchoTicketDb
     ports:
       - "5432:5432"
     restart: unless-stopped
     volumes:
       - echo_pgdata:/var/lib/postgresql/data
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: echo_rabbitmq
+    ports:
+      - "5672:5672"   # C# uygulamamızın mesaj göndermek için bağlanacağı asıl port
+      - "15672:15672" # Tarayıcıdan görsel olarak kuyrukları izleyeceğimiz Yönetim Paneli portu
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    restart: always
 
 volumes:
   echo_pgdata:

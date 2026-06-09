@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <UserSecretsId>dotnet-ECHO.Ticket.Worker-6e447744-124d-438d-a87d-bb5dc53ea545</UserSecretsId>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.11" />
+        <PackageReference Include="RabbitMQ.Client" Version="7.2.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\ECHO.Ticket.Business\ECHO.Ticket.Business.csproj" />
+      <ProjectReference Include="..\..\ECHO.Ticket.Core\ECHO.Ticket.Core.csproj" />
+      <ProjectReference Include="..\..\ECHO.Ticket.DataAccess\ECHO.Ticket.DataAccess.csproj" />
+    </ItemGroup>
+</Project>
