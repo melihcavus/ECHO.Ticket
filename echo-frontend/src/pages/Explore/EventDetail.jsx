@@ -1,67 +1,101 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import Sidebar from '../../components/Sidebar'; // YENİ SİDEBAR BİLEŞENİ
+import Sidebar from '../../components/Sidebar';
 import { ArrowLeft, CalendarDays, MapPin, User, CheckCircle2 } from 'lucide-react';
 
 function EventDetail() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { user } = useAuth(); // logout fonksiyonunu sildik
+    const { user } = useAuth();
 
     const [eventData, setEventData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [isPurchasing, setIsPurchasing] = useState(false); // Satın alma sırasındaki bekleme durumu
+
+    const fetchEventDetail = async () => {
+        setIsLoading(true);
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`http://localhost:5216/api/events/${id}`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) throw new Error('Etkinlik detayları çekilemedi');
+
+            const result = await response.json();
+
+            if (result.isSuccess) {
+                setEventData(result.data);
+            } else {
+                setError(result.message);
+            }
+        } catch (err) {
+            console.error("Hata:", err);
+            setError("Etkinlik yüklenirken bir sorun oluştu.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchEventDetail = async () => {
-            setIsLoading(true);
-            try {
-                const token = localStorage.getItem('token');
-                const response = await fetch(`http://localhost:5216/api/events/explore/${id}`, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-
-                if (!response.ok) throw new Error('Etkinlik detayları çekilemedi');
-
-                const result = await response.json();
-
-                if (result.isSuccess) {
-                    setEventData(result.data);
-                } else {
-                    setError(result.message);
-                }
-            } catch (err) {
-                console.error("Hata:", err);
-                setError("Etkinlik yüklenirken bir sorun oluştu.");
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
         fetchEventDetail();
     }, [id]);
 
-    const handleBuyTicket = (ticketId) => {
-        // TODO: RabbitMQ entegrasyonu burada yapılacak!
-        console.log(`Satın alınacak bilet ID: ${ticketId}`);
-        alert("Satın alma altyapısı (RabbitMQ) sıradaki adımda eklenecek!");
+    const handleBuyTicket = async (ticketId) => {
+        if (!user || !user.id) {
+            alert("Satın alma işlemi için giriş yapmalısınız.");
+            return;
+        }
+
+        setIsPurchasing(true);
+
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch('http://localhost:5216/api/Tickets/purchase', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    userId: user.id,
+                    eventId: id,
+                    ticketId: ticketId
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.status === 202 || data.isSuccess) {
+                alert("Satın alma işleminiz sıraya alındı! Stok düştüğünde sayfaya yansıyacaktır.");
+
+                // İşlem arkada tamamlandıktan sonra kapasitenin düştüğünü görmek için
+                // 2 saniye sonra sayfa verilerini tekrar çeker
+                setTimeout(() => {
+                    fetchEventDetail();
+                }, 2000);
+            } else {
+                alert(`İşlem başarısız: ${data.message || 'Bilinmeyen bir hata oluştu.'}`);
+            }
+        } catch (error) {
+            console.error("Satın alma hatası:", error);
+            alert("İşlem sırasında sunucu ile bağlantı kurulamadı.");
+        } finally {
+            setIsPurchasing(false);
+        }
     };
 
     return (
         <div className="min-h-screen bg-[#0B1325] flex font-sans text-slate-200">
-
-            {/* YENİ OLUŞTURDUĞUMUZ MERKEZİ SIDEBAR */}
             <Sidebar activeMenu="explore" />
-
-            {/* ANA İÇERİK */}
             <main className="flex-1 flex flex-col h-screen overflow-hidden relative">
                 <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-cyan-600/10 rounded-full blur-[120px] pointer-events-none z-0"></div>
 
-                {/* Üst Bar */}
                 <header className="h-24 bg-[#0B1325]/80 backdrop-blur-xl border-b border-white/5 flex items-center justify-between px-8 z-10 sticky top-0">
                     <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors">
                         <ArrowLeft size={20} />
@@ -69,19 +103,18 @@ function EventDetail() {
                     </button>
                     <div className="flex items-center gap-4 cursor-pointer hover:opacity-80 transition-opacity">
                         <div className="w-11 h-11 rounded-full bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-cyan-900/50">
-                            {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
+                            {user?.firstName?.charAt(0) || 'U'}{user?.lastName?.charAt(0) || ''}
                         </div>
                     </div>
                 </header>
 
                 <div className="flex-1 overflow-y-auto p-8 relative z-10">
-                    {isLoading ? (
+                    {isLoading && !eventData ? (
                         <div className="text-center text-cyan-400 py-10 animate-pulse font-medium">Detaylar yükleniyor...</div>
                     ) : error ? (
                         <div className="text-center text-red-400 py-10 font-medium">{error}</div>
                     ) : eventData ? (
                         <div className="max-w-5xl mx-auto space-y-8">
-                            {/* Başlık ve Temel Bilgiler */}
                             <div className="bg-[#111C3A] rounded-3xl border border-white/5 p-8 shadow-xl">
                                 <div className="inline-block px-3 py-1 bg-cyan-500/10 text-cyan-400 rounded-full text-sm font-medium mb-4">
                                     Aktif Kampanya
@@ -105,7 +138,6 @@ function EventDetail() {
                             </div>
 
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                                {/* Açıklama Alanı */}
                                 <div className="lg:col-span-2 space-y-6">
                                     <div className="bg-[#111C3A] rounded-3xl border border-white/5 p-8 shadow-xl">
                                         <h2 className="text-xl font-bold text-white mb-4">Proje Hakkında</h2>
@@ -115,7 +147,6 @@ function EventDetail() {
                                     </div>
                                 </div>
 
-                                {/* Biletler / Paketler Alanı */}
                                 <div className="space-y-6">
                                     <h2 className="text-xl font-bold text-white px-2">Destek Paketleri</h2>
                                     {eventData.tickets && eventData.tickets.length > 0 ? (
@@ -135,9 +166,13 @@ function EventDetail() {
 
                                                 <button
                                                     onClick={() => handleBuyTicket(ticket.ticketId)}
-                                                    className="w-full py-3 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl font-bold transition-colors shadow-lg shadow-cyan-900/50"
+                                                    disabled={isPurchasing || ticket.remainingCapacity <= 0}
+                                                    className={`w-full py-3 rounded-xl font-bold transition-colors shadow-lg shadow-cyan-900/50 
+                                                        ${isPurchasing || ticket.remainingCapacity <= 0
+                                                        ? 'bg-slate-600 cursor-not-allowed text-slate-300'
+                                                        : 'bg-cyan-600 hover:bg-cyan-500 text-white'}`}
                                                 >
-                                                    Destek Ol / Bilet Al
+                                                    {isPurchasing ? 'İşleniyor...' : (ticket.remainingCapacity > 0 ? 'Destek Ol / Bilet Al' : 'Tükendi')}
                                                 </button>
                                             </div>
                                         ))
