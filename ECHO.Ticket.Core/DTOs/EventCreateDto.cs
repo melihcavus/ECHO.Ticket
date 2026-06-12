@@ -6,4 +6,5 @@ public class EventCreateDto
     public DateTime EventDate { get; set; }
     public Guid OrganizerId { get; set; }
     public string Location { get; set; } = string.Empty;
+    public string Category { get; set; } = "Diğer";
 }

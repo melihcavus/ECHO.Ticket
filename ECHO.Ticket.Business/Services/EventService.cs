@@ -94,6 +94,7 @@ public class EventService : IEventService
                 EventId = e.Id,
                 EventName = e.Title,
                 EventDate = e.EventDate,
+                Category = e.Category,
                 TotalPledgeAmount = 0
             }).ToList();
 
@@ -123,6 +124,7 @@ public class EventService : IEventService
                 EventDate = eventEntity.EventDate,
                 Location = eventEntity.Location,
                 OrganizerName = "Organizatör",
+                Category = eventEntity.Category,
                 Tickets = tickets.Select(t => new TicketDto
                 {
                     TicketId = t.Id,

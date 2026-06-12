@@ -8,4 +8,5 @@ public class EventSummaryDto
     
     // İleride etkinlik için toplanan toplam parayı göstermek istersek diye:
     public decimal TotalPledgeAmount { get; set; }
+    public string Category { get; set; } = string.Empty;
 }

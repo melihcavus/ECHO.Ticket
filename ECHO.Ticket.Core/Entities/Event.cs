@@ -15,4 +15,6 @@ public class Event
     //İlişkiler (Foregin Key) - Bu etkinliği kim oluşturdu?
     public Guid OrganizerId { get; set; }
     public User Organizer { get; set; } = null!;
+    
+    public string Category { get; set; } = "Diğer";
 }

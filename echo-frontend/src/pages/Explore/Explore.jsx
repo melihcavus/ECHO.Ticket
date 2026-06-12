@@ -4,6 +4,21 @@ import { useAuth } from '../../context/AuthContext';
 import Sidebar from '../../components/Sidebar';
 import { Search, CalendarDays, Plus, X } from 'lucide-react';
 
+import techImg from '../../assets/categories/technology.jpg';
+import sportImg from '../../assets/categories/sports.jpg';
+import artImg from '../../assets/categories/art.jpg';
+import eduImg from '../../assets/categories/education.jpg';
+
+const getCategoryImage = (categoryName) => {
+    switch(categoryName) {
+        case 'Spor': return sportImg;
+        case 'Sanat ve Tasarım': return artImg;
+        case 'Eğitim': return eduImg;
+        case 'Bilişim ve Teknoloji':
+        default: return techImg;
+    }
+};
+
 function Explore() {
     const navigate = useNavigate();
     const { user } = useAuth();
@@ -12,17 +27,16 @@ function Explore() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Modal State'leri
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formData, setFormData] = useState({
         title: '',
         description: '',
         eventDate: '',
-        location: ''
+        location: '',
+        category: 'Bilişim ve Teknoloji'
     });
 
-    // Veri çekme fonksiyonunu dışarı aldık ki yeni etkinlik eklenince tekrar çağırabilelim
     const fetchEvents = async () => {
         setIsLoading(true);
         try {
@@ -55,7 +69,6 @@ function Explore() {
         fetchEvents();
     }, []);
 
-    // Form gönderme işlemi (UTC dönüşümü eklendi)
     const handleCreateEvent = async (e) => {
         e.preventDefault();
         setIsSubmitting(true);
@@ -71,9 +84,9 @@ function Explore() {
                 body: JSON.stringify({
                     title: formData.title,
                     description: formData.description,
-                    // BURASI GÜNCELLENDİ: Yerel tarihi PostgreSQL'in istediği UTC formatına çeviriyoruz
                     eventDate: new Date(formData.eventDate).toISOString(),
                     location: formData.location,
+                    category: formData.category,
                     organizerId: user?.id
                 })
             });
@@ -83,8 +96,8 @@ function Explore() {
             if (response.ok && result.isSuccess) {
                 alert("Etkinlik başarıyla oluşturuldu!");
                 setIsModalOpen(false);
-                setFormData({ title: '', description: '', eventDate: '', location: '' }); // Formu sıfırla
-                fetchEvents(); // Listeyi yenile
+                setFormData({ title: '', description: '', eventDate: '', location: '', category: 'Bilişim ve Teknoloji' });
+                fetchEvents();
             } else {
                 alert(`Hata: ${result.message || 'Oluşturulamadı'}`);
             }
@@ -126,7 +139,6 @@ function Explore() {
                             <p className="text-slate-400 text-sm">Dünyayı değiştirecek projelere ve heyecan verici etkinliklere göz at.</p>
                         </div>
 
-                        {/* SADECE ADMIN/ORGANIZER GÖREBİLİR */}
                         {(user?.role === 'Admin' || user?.role === 'Organizer') && (
                             <button
                                 onClick={() => setIsModalOpen(true)}
@@ -148,8 +160,16 @@ function Explore() {
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10">
                             {events.map((event) => (
                                 <div key={event.eventId} className="bg-[#111C3A] rounded-3xl border border-white/5 hover:border-cyan-500/30 transition-all group shadow-xl shadow-black/20 overflow-hidden flex flex-col">
-                                    <div className="h-32 bg-gradient-to-br from-[#16244A] to-[#1A2744] relative">
-                                        <div className="absolute top-4 right-4 px-3 py-1 bg-black/40 backdrop-blur-md rounded-full border border-white/10 text-xs font-medium text-cyan-300">
+                                    <div
+                                        className="h-32 relative bg-[#16244A]"
+                                        style={{
+                                            backgroundImage: `url(${getCategoryImage(event.category)})`,
+                                            backgroundSize: 'cover',
+                                            backgroundPosition: 'center'
+                                        }}
+                                    >
+                                        <div className="absolute inset-0 bg-gradient-to-t from-[#111C3A] to-transparent"></div>
+                                        <div className="absolute top-4 right-4 px-3 py-1 bg-black/60 backdrop-blur-md rounded-full border border-white/10 text-xs font-medium text-cyan-300 z-10">
                                             Aktif
                                         </div>
                                     </div>
@@ -188,7 +208,6 @@ function Explore() {
                 </div>
             </main>
 
-            {/* ETKİNLİK OLUŞTURMA MODALI */}
             {isModalOpen && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4">
                     <div className="bg-[#111C3A] rounded-3xl border border-white/10 w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh]">
@@ -211,6 +230,21 @@ function Explore() {
                                         className="w-full bg-[#0B1325] border border-white/5 rounded-xl py-2.5 px-4 text-white focus:border-cyan-500/50 focus:outline-none"
                                         placeholder="Örn: Yeni Nesil Robotik Kol"
                                     />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-300 mb-1">Kategori</label>
+                                    <select
+                                        required
+                                        value={formData.category}
+                                        onChange={(e) => setFormData({...formData, category: e.target.value})}
+                                        className="w-full bg-[#0B1325] border border-white/5 rounded-xl py-2.5 px-4 text-slate-300 focus:border-cyan-500/50 focus:outline-none appearance-none"
+                                    >
+                                        <option value="Bilişim ve Teknoloji">Bilişim ve Teknoloji</option>
+                                        <option value="Spor">Spor</option>
+                                        <option value="Sanat ve Tasarım">Sanat ve Tasarım</option>
+                                        <option value="Eğitim">Eğitim</option>
+                                    </select>
                                 </div>
 
                                 <div>
