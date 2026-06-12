@@ -1,5 +1,6 @@
 using ECHO.Ticket.Business.Interfaces;
 using ECHO.Ticket.Core.DTOs;
+using ECHO.Ticket.Core.Entities;
 using ECHO.Ticket.Core.Results;
 using ECHO.Ticket.DataAccess.Interfaces;
 using FluentValidation;
@@ -15,13 +16,16 @@ public class PledgeService : IPledgeService
     private readonly IRepository<PledgeEntity> _pledgeRepository;
     private readonly IRepository<UserEntity> _userRepository;
     private readonly IRepository<TicketEntity> _ticketRepository;
+    private readonly IRepository<Event> _eventRepository;
     private readonly IValidator<PledgeEntity> _validator;
     private readonly IWorkContext _workContext;
+    
 
     public PledgeService(
         IRepository<PledgeEntity> pledgeRepository, 
         IRepository<UserEntity> userRepository, 
         IRepository<TicketEntity> ticketRepository,
+        IRepository<Event> eventRepository,
         IValidator<PledgeEntity> validator, IWorkContext workContext)
     {
         _pledgeRepository = pledgeRepository;
@@ -29,6 +33,7 @@ public class PledgeService : IPledgeService
         _ticketRepository = ticketRepository;
         _validator = validator;
         _workContext = workContext;
+        _eventRepository = eventRepository;
     }
 
     public async Task<Result<IEnumerable<PledgeEntity>>> GetAllPledgesAsync()
@@ -46,15 +51,32 @@ public class PledgeService : IPledgeService
         return Result<PledgeEntity>.Success(pledge);
     }
 
-    public async Task<Result<IEnumerable<PledgeEntity>>> GetPledgesByUserIdAsync(Guid userId)
+    public async Task<Result<IEnumerable<UserTicketDto>>> GetPledgesByUserIdAsync(Guid userId)
     {
         var allPledges = await _pledgeRepository.GetAllAsync();
-        var userPledges = allPledges.Where(p => p.UserId == userId);
+        var userPledges = allPledges.Where(p => p.UserId == userId).ToList();
 
         if (!userPledges.Any())
-            return Result<IEnumerable<PledgeEntity>>.Failure("Bu kullanıcının henüz bir desteği bulunmuyor.");
+            return Result<IEnumerable<UserTicketDto>>.Failure("Henüz bir biletin bulunmuyor.");
 
-        return Result<IEnumerable<PledgeEntity>>.Success(userPledges);
+        var resultList = new List<UserTicketDto>();
+
+        foreach (var pledge in userPledges)
+        {
+            var ticket = await _ticketRepository.GetByIdAsync(pledge.TicketId);
+            var eventEntity = await _eventRepository.GetByIdAsync(ticket.EventId); 
+
+            resultList.Add(new UserTicketDto
+            {
+                PledgeId = pledge.Id,
+                EventTitle = eventEntity?.Title ?? "Etkinlik Silinmiş",
+                TicketName = ticket?.Name ?? "Paket Bilgisi Yok",
+                AmountPaid = pledge.AmountPaid,
+                PledgeDate = pledge.PledgeDate
+            });
+        }
+
+        return Result<IEnumerable<UserTicketDto>>.Success(resultList);
     }
 
     public async Task<Result> AddPledgeAsync(PledgeCreateDto pledgeDto)

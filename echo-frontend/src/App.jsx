@@ -7,6 +7,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext'; // Context'i import ettik
 import Explore from './pages/Explore/Explore.jsx';
 import EventDetail from './pages/Explore/EventDetail.jsx';
+import MyTickets from './pages/Sidebar/MyTickets';
 
 function App() {
     return (
@@ -43,6 +44,7 @@ function App() {
                             </ProtectedRoute>
                         }
                     />
+                    <Route path="/tickets" element={<MyTickets />} />
                     <Route path="*" element={<Navigate to="/" />} /> {/* Yanlış adreste de Home'a atalım */}
                 </Routes>
             </BrowserRouter>

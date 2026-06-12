@@ -40,7 +40,7 @@ function Sidebar({ activeMenu }) {
                         <FolderHeart size={20} />
                         <span>Keşfet</span>
                     </div>
-                    <div className={getMenuStyles('tickets')}>
+                    <div onClick={() => navigate('/tickets')} className={getMenuStyles('tickets')}>
                         <Ticket size={20} />
                         <span>Biletlerim</span>
                     </div>
