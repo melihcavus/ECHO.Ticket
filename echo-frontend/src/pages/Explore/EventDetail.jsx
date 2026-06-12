@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import Sidebar from '../../components/Sidebar';
-import { ArrowLeft, CalendarDays, MapPin, User, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, CalendarDays, MapPin, User, CheckCircle2, Plus, X } from 'lucide-react';
 
 function EventDetail() {
     const { id } = useParams();
@@ -12,7 +12,16 @@ function EventDetail() {
     const [eventData, setEventData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [isPurchasing, setIsPurchasing] = useState(false); // Satın alma sırasındaki bekleme durumu
+    const [isPurchasing, setIsPurchasing] = useState(false);
+
+    const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
+    const [isTicketSubmitting, setIsTicketSubmitting] = useState(false);
+    const [ticketFormData, setTicketFormData] = useState({
+        name: '',
+        description: '',
+        price: '',
+        capacity: ''
+    });
 
     const fetchEventDetail = async () => {
         setIsLoading(true);
@@ -35,7 +44,6 @@ function EventDetail() {
                 setError(result.message);
             }
         } catch (err) {
-            console.error("Hata:", err);
             setError("Etkinlik yüklenirken bir sorun oluştu.");
         } finally {
             setIsLoading(false);
@@ -74,8 +82,6 @@ function EventDetail() {
             if (response.status === 202 || data.isSuccess) {
                 alert("Satın alma işleminiz sıraya alındı! Stok düştüğünde sayfaya yansıyacaktır.");
 
-                // İşlem arkada tamamlandıktan sonra kapasitenin düştüğünü görmek için
-                // 2 saniye sonra sayfa verilerini tekrar çeker
                 setTimeout(() => {
                     fetchEventDetail();
                 }, 2000);
@@ -83,10 +89,47 @@ function EventDetail() {
                 alert(`İşlem başarısız: ${data.message || 'Bilinmeyen bir hata oluştu.'}`);
             }
         } catch (error) {
-            console.error("Satın alma hatası:", error);
             alert("İşlem sırasında sunucu ile bağlantı kurulamadı.");
         } finally {
             setIsPurchasing(false);
+        }
+    };
+
+    const handleCreateTicket = async (e) => {
+        e.preventDefault();
+        setIsTicketSubmitting(true);
+
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch('http://localhost:5216/api/Tickets', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    name: ticketFormData.name,
+                    description: ticketFormData.description,
+                    price: parseFloat(ticketFormData.price),
+                    capacity: parseInt(ticketFormData.capacity),
+                    eventId: id
+                })
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.isSuccess) {
+                alert("Paket başarıyla eklendi!");
+                setIsTicketModalOpen(false);
+                setTicketFormData({ name: '', description: '', price: '', capacity: '' });
+                fetchEventDetail();
+            } else {
+                alert(`Hata: ${result.message || 'Oluşturulamadı'}`);
+            }
+        } catch (err) {
+            alert("Sunucuyla iletişim kurulurken bir hata oluştu.");
+        } finally {
+            setIsTicketSubmitting(false);
         }
     };
 
@@ -148,7 +191,18 @@ function EventDetail() {
                                 </div>
 
                                 <div className="space-y-6">
-                                    <h2 className="text-xl font-bold text-white px-2">Destek Paketleri</h2>
+                                    <div className="flex items-center justify-between px-2">
+                                        <h2 className="text-xl font-bold text-white">Destek Paketleri</h2>
+                                        {(user?.role === 'Admin' || user?.role === 'Organizer') && (
+                                            <button
+                                                onClick={() => setIsTicketModalOpen(true)}
+                                                className="flex items-center gap-1 text-sm bg-cyan-600/20 text-cyan-400 hover:bg-cyan-600/40 px-3 py-1.5 rounded-lg transition-colors font-medium"
+                                            >
+                                                <Plus size={16} /> Paket Ekle
+                                            </button>
+                                        )}
+                                    </div>
+
                                     {eventData.tickets && eventData.tickets.length > 0 ? (
                                         eventData.tickets.map(ticket => (
                                             <div key={ticket.ticketId} className="bg-gradient-to-b from-[#16244A] to-[#111C3A] rounded-3xl border border-white/5 p-6 shadow-xl hover:border-cyan-500/30 transition-all group">
@@ -187,6 +241,84 @@ function EventDetail() {
                     ) : null}
                 </div>
             </main>
+
+            {isTicketModalOpen && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4">
+                    <div className="bg-[#111C3A] rounded-3xl border border-white/10 w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh]">
+                        <div className="flex justify-between items-center p-6 border-b border-white/10">
+                            <h2 className="text-xl font-bold text-white">Yeni Paket Oluştur</h2>
+                            <button onClick={() => setIsTicketModalOpen(false)} className="text-slate-400 hover:text-white transition-colors">
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        <div className="p-6 overflow-y-auto">
+                            <form onSubmit={handleCreateTicket} className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-300 mb-1">Paket Adı</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={ticketFormData.name}
+                                        onChange={(e) => setTicketFormData({...ticketFormData, name: e.target.value})}
+                                        className="w-full bg-[#0B1325] border border-white/5 rounded-xl py-2.5 px-4 text-white focus:border-cyan-500/50 focus:outline-none"
+                                        placeholder="Örn: VIP Katılım Paketi"
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-300 mb-1">Fiyat (₺)</label>
+                                        <input
+                                            type="number"
+                                            required
+                                            min="0"
+                                            step="0.01"
+                                            value={ticketFormData.price}
+                                            onChange={(e) => setTicketFormData({...ticketFormData, price: e.target.value})}
+                                            className="w-full bg-[#0B1325] border border-white/5 rounded-xl py-2.5 px-4 text-white focus:border-cyan-500/50 focus:outline-none"
+                                            placeholder="1500"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-300 mb-1">Kapasite (Stok)</label>
+                                        <input
+                                            type="number"
+                                            required
+                                            min="1"
+                                            value={ticketFormData.capacity}
+                                            onChange={(e) => setTicketFormData({...ticketFormData, capacity: e.target.value})}
+                                            className="w-full bg-[#0B1325] border border-white/5 rounded-xl py-2.5 px-4 text-white focus:border-cyan-500/50 focus:outline-none"
+                                            placeholder="100"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-300 mb-1">Açıklama</label>
+                                    <textarea
+                                        required
+                                        rows="3"
+                                        value={ticketFormData.description}
+                                        onChange={(e) => setTicketFormData({...ticketFormData, description: e.target.value})}
+                                        className="w-full bg-[#0B1325] border border-white/5 rounded-xl py-2.5 px-4 text-white focus:border-cyan-500/50 focus:outline-none resize-none"
+                                        placeholder="Paketin avantajlarını yazın..."
+                                    ></textarea>
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    disabled={isTicketSubmitting}
+                                    className={`w-full py-3 rounded-xl font-bold transition-all mt-4
+                                        ${isTicketSubmitting ? 'bg-slate-600 text-slate-400 cursor-not-allowed' : 'bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg shadow-cyan-900/50'}`}
+                                >
+                                    {isTicketSubmitting ? 'Oluşturuluyor...' : 'Paketi Kaydet'}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
