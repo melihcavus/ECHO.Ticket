@@ -66,4 +66,10 @@ public class UsersController : ControllerBase
         var result = await _userService.DeleteUserAsync(id);
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
+    [HttpPost("add-balance")]
+    public async Task<IActionResult> AddBalance([FromBody] AddBalanceDto request)
+    {
+        var result = await _userService.AddBalanceAsync(request.Amount);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
 }

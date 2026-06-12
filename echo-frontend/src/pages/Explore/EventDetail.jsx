@@ -7,7 +7,7 @@ import { ArrowLeft, CalendarDays, MapPin, User, CheckCircle2, Plus, X } from 'lu
 function EventDetail() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { user } = useAuth();
+    const { user, setUser } = useAuth();
 
     const [eventData, setEventData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -60,6 +60,13 @@ function EventDetail() {
             return;
         }
 
+        const selectedTicket = eventData.tickets.find(t => t.ticketId === ticketId);
+        if (selectedTicket && (user.balance || 0) < selectedTicket.price) {
+            alert(`Bakiyeniz yetersiz!\nBilet Fiyatı: ₺${selectedTicket.price}\nMevcut Bakiyeniz: ₺${user.balance || 0}\n\nLütfen işleme devam etmek için cüzdanınıza bakiye yükleyin.`);
+            navigate('/wallet');
+            return;
+        }
+
         setIsPurchasing(true);
 
         try {
@@ -80,6 +87,13 @@ function EventDetail() {
             const data = await response.json();
 
             if (response.status === 202 || data.isSuccess) {
+                if (setUser) {
+                    setUser(prev => ({
+                        ...prev,
+                        balance: prev.balance - selectedTicket.price
+                    }));
+                }
+
                 alert("Satın alma işleminiz sıraya alındı! Stok düştüğünde sayfaya yansıyacaktır.");
 
                 setTimeout(() => {

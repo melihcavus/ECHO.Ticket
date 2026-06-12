@@ -59,32 +59,46 @@ public class TicketPurchaseWorker : BackgroundService
                     using (var scope = _serviceScopeFactory.CreateScope())
                     {
                         var ticketRepo = scope.ServiceProvider.GetRequiredService<IRepository<Core.Entities.Ticket>>();
-                        var pledgeRepo = scope.ServiceProvider.GetRequiredService<IRepository<Pledge>>(); 
+                        var pledgeRepo = scope.ServiceProvider.GetRequiredService<IRepository<Pledge>>();
+                        var userRepo = scope.ServiceProvider.GetRequiredService<IRepository<ECHO.Ticket.Core.Entities.User>>();
 
                         var ticket = await ticketRepo.GetByIdAsync(purchaseData.TicketId);
+                        var user = await userRepo.GetByIdAsync(purchaseData.UserId);
 
-                        if (ticket != null && ticket.Capacity > 0)
+                        if (ticket != null && ticket.Capacity > 0 && user != null)
                         {
-                            ticket.Capacity--;
-                            ticketRepo.Update(ticket);
-
-                            var newPledge = new Pledge
+                            if (user.Balance >= ticket.Price)
                             {
-                                Id = Guid.NewGuid(),
-                                UserId = purchaseData.UserId,
-                                TicketId = purchaseData.TicketId,
-                                PledgeDate = DateTime.UtcNow,
-                                AmountPaid = ticket.Price 
-                            };
-                            await pledgeRepo.AddAsync(newPledge);
+                                user.Balance -= ticket.Price;
+                                userRepo.Update(user);
 
-                            await ticketRepo.SaveChangesAsync();
+                                ticket.Capacity--;
+                                ticketRepo.Update(ticket);
 
-                            _logger.LogInformation($"[v] İşlem Başarılı: Ticket ID {ticket.Id} için stok düşüldü. Kullanıcı {purchaseData.UserId} için destek kaydı oluşturuldu.");
+                                var newPledge = new Pledge
+                                {
+                                    Id = Guid.NewGuid(),
+                                    UserId = purchaseData.UserId,
+                                    TicketId = purchaseData.TicketId,
+                                    PledgeDate = DateTime.UtcNow,
+                                    AmountPaid = ticket.Price
+                                };
+                                await pledgeRepo.AddAsync(newPledge);
+
+                                await ticketRepo.SaveChangesAsync();
+                                await userRepo.SaveChangesAsync();
+                                await pledgeRepo.SaveChangesAsync();
+
+                                _logger.LogInformation($"[v] Islem Basarili: Ticket ID {ticket.Id}. Kullanici {user.Id} bakiyesinden {ticket.Price} dusuldu.");
+                            }
+                            else
+                            {
+                                _logger.LogWarning($"[x] Islem Basarisiz: Yetersiz Bakiye! (Kullanici: {user.Id})");
+                            }
                         }
                         else
                         {
-                            _logger.LogWarning($"[x] İşlem Başarısız: Bilet bulunamadı veya tükenmiş! (Ticket ID: {purchaseData.TicketId})");
+                            _logger.LogWarning($"[x] Islem Basarisiz: Bilet bulunamadi veya tukenmis! (Ticket ID: {purchaseData.TicketId})");
                         }
                     }
                 }

@@ -19,6 +19,7 @@ public class UserServiceTests
     private readonly Mock<IValidator<UserEntity>> _validatorMock;
     private readonly Mock<IJwtProvider> _jwtProviderMock;
     private readonly Mock<IPasswordHasher> _passwordHasherMock;
+    private readonly Mock<IWorkContext> _workContextMock;
     private readonly UserService _userService;
 
     public UserServiceTests()
@@ -27,13 +28,19 @@ public class UserServiceTests
         _validatorMock = new Mock<IValidator<UserEntity>>();
         _jwtProviderMock = new Mock<IJwtProvider>();
         _passwordHasherMock = new Mock<IPasswordHasher>();
-        _userService = new UserService(_userRepositoryMock.Object, _validatorMock.Object, _jwtProviderMock.Object, _passwordHasherMock.Object);
+        _workContextMock = new Mock<IWorkContext>();
+        
+        _userService = new UserService(
+            _userRepositoryMock.Object, 
+            _validatorMock.Object, 
+            _jwtProviderMock.Object, 
+            _passwordHasherMock.Object, 
+            _workContextMock.Object);
     }
 
     [Fact]
     public async Task LoginAsync_ShouldReturnSuccess_WhenCredentialsAreValid()
     {
-        // Arrange
         var email = "test@example.com";
         var password = "correctpassword";
         var hashedPassword = BCrypt.Net.BCrypt.HashPassword(password);
@@ -44,10 +51,8 @@ public class UserServiceTests
         _userRepositoryMock.Setup(repo => repo.GetAllAsync()).ReturnsAsync(new List<UserEntity> { user });
         _jwtProviderMock.Setup(provider => provider.GenerateToken(user)).Returns(expectedToken);
 
-        // Act
         var result = await _userService.LoginAsync(loginDto);
 
-        // Assert
         result.IsSuccess.Should().BeTrue();
         result.Data.Should().Be(expectedToken);
         result.Message.Should().Be("Giriş başarılı! Token üretildi.");
@@ -56,14 +61,11 @@ public class UserServiceTests
     [Fact]
     public async Task LoginAsync_ShouldReturnFailure_WhenUserNotFound()
     {
-        // Arrange
         var loginDto = new UserLoginDto { Email = "nonexistent@example.com", Password = "password" };
         _userRepositoryMock.Setup(repo => repo.GetAllAsync()).ReturnsAsync(new List<UserEntity>());
 
-        // Act
         var result = await _userService.LoginAsync(loginDto);
 
-        // Assert
         result.IsSuccess.Should().BeFalse();
         result.Data.Should().BeNull();
         result.Message.Should().Be("Hata: Bu e-posta adresiyle kayıtlı bir kullanıcı bulunamadı.");
@@ -72,7 +74,6 @@ public class UserServiceTests
     [Fact]
     public async Task LoginAsync_ShouldReturnFailure_WhenPasswordIsIncorrect()
     {
-        // Arrange
         var email = "test@example.com";
         var correctPassword = "correctpassword";
         var wrongPassword = "wrongpassword";
@@ -82,10 +83,8 @@ public class UserServiceTests
 
         _userRepositoryMock.Setup(repo => repo.GetAllAsync()).ReturnsAsync(new List<UserEntity> { user });
 
-        // Act
         var result = await _userService.LoginAsync(loginDto);
 
-        // Assert
         result.IsSuccess.Should().BeFalse();
         result.Data.Should().BeNull();
         result.Message.Should().Be("Hata: Girdiğiniz şifre yanlış.");

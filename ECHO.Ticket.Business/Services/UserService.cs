@@ -14,13 +14,15 @@ public class UserService : IUserService
     private readonly IValidator<UserEntity> _validator;
     private readonly IJwtProvider _jwtProvider;
     private readonly IPasswordHasher _passwordHasher;
+    private readonly IWorkContext _workContext;
 
-    public UserService(IRepository<UserEntity> userRepository, IValidator<UserEntity> validator, IJwtProvider jwtProvider, IPasswordHasher passwordHasher)
+    public UserService(IRepository<UserEntity> userRepository, IValidator<UserEntity> validator, IJwtProvider jwtProvider, IPasswordHasher passwordHasher, IWorkContext workContext)
     {
         _userRepository = userRepository;
         _validator = validator;
         _jwtProvider = jwtProvider;
         _passwordHasher = passwordHasher;
+        _workContext = workContext;
     }
     
     public async Task<Result<string>> LoginAsync(UserLoginDto loginDto)
@@ -120,5 +122,19 @@ public class UserService : IUserService
         await _userRepository.SaveChangesAsync();
         return Result.Success("Kullanıcı başarıyla silindi.");
     }
+    public async Task<Result> AddBalanceAsync(decimal amount)
+    {
+        if (amount <= 0) return Result.Failure("Yüklenecek tutar 0'dan büyük olmalıdır.");
+
+        var userId = _workContext.UserId;
+        var user = await _userRepository.GetByIdAsync(userId);
     
+        if (user == null) return Result.Failure("Kullanıcı bulunamadı.");
+
+        user.Balance += amount;
+        _userRepository.Update(user);
+        await _userRepository.SaveChangesAsync();
+
+        return Result.Success("Bakiye başarıyla yüklendi.");
+    }
 }

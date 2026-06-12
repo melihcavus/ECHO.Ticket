@@ -12,4 +12,5 @@ public class User
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public bool IsActive { get; set; } = true;
     public string Role { get; set; } = UserRoles.User;
+    public decimal Balance { get; set; } = 0.00m; // Kullanıcı bakiyesi
 }

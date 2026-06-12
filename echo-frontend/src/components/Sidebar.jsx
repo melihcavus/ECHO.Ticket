@@ -44,9 +44,9 @@ function Sidebar({ activeMenu }) {
                         <Ticket size={20} />
                         <span>Biletlerim</span>
                     </div>
-                    <div className={getMenuStyles('transactions')}>
+                    <div onClick={() => navigate('/wallet')} className={getMenuStyles('wallet')}>
                         <Wallet size={20} />
-                        <span>İşlemler</span>
+                        <span>Cüzdanım</span>
                     </div>
                 </nav>
             </div>
