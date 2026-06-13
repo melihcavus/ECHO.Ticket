@@ -1,20 +1,21 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import {
-    LayoutDashboard, Ticket, FolderHeart, Wallet, Settings, LogOut
+    LayoutDashboard, Ticket, FolderHeart, Wallet, Settings, LogOut, Grid3X3
 } from 'lucide-react';
 
 function Sidebar({ activeMenu }) {
     const navigate = useNavigate();
-    const { logout } = useAuth();
+    const { logout, user } = useAuth();
+    const { t } = useLanguage();
 
     const handleLogout = () => {
         logout();
         navigate('/login');
     };
 
-    // Hangi menünün aktif olduğunu hesaplayan stil fonksiyonu
     const getMenuStyles = (menuName) => {
         const baseStyles = "flex items-center gap-3 px-4 py-3 rounded-xl transition-all cursor-pointer ";
         const activeStyles = "bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg shadow-cyan-900/20 font-medium";
@@ -34,30 +35,37 @@ function Sidebar({ activeMenu }) {
                 <nav className="p-4 space-y-2 mt-4">
                     <div onClick={() => navigate('/dashboard')} className={getMenuStyles('dashboard')}>
                         <LayoutDashboard size={20} />
-                        <span>Genel Bakış</span>
+                        <span>{t('dashboardMenu', 'Genel Bakış')}</span>
                     </div>
                     <div onClick={() => navigate('/explore')} className={getMenuStyles('explore')}>
                         <FolderHeart size={20} />
-                        <span>Keşfet</span>
+                        <span>{t('exploreMenu', 'Keşfet')}</span>
                     </div>
                     <div onClick={() => navigate('/tickets')} className={getMenuStyles('tickets')}>
                         <Ticket size={20} />
-                        <span>Biletlerim</span>
+                        <span>{t('ticketsMenu', 'Biletlerim')}</span>
                     </div>
                     <div onClick={() => navigate('/wallet')} className={getMenuStyles('wallet')}>
                         <Wallet size={20} />
-                        <span>Cüzdanım</span>
+                        <span>{t('walletMenu', 'Cüzdanım')}</span>
                     </div>
+
+                    {(user?.role === 'Admin' || user?.role === 'Organizer') && (
+                        <div onClick={() => navigate('/venues')} className={getMenuStyles('venues')}>
+                            <Grid3X3 size={20} />
+                            <span>{t('venuesMenu', 'Sahneler')}</span>
+                        </div>
+                    )}
                 </nav>
             </div>
             <div className="p-4 border-t border-white/5 space-y-2 bg-[#0D162B]">
                 <div onClick={() => navigate('/settings')} className={getMenuStyles('settings')}>
                     <Settings size={20} />
-                    <span>Ayarlar</span>
+                    <span>{t('settingsMenu', 'Ayarlar')}</span>
                 </div>
                 <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-xl transition-all">
                     <LogOut size={20} />
-                    <span className="font-medium">Çıkış Yap</span>
+                    <span className="font-medium">{t('logoutMenu', 'Çıkış Yap')}</span>
                 </button>
             </div>
         </aside>

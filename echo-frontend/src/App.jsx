@@ -8,6 +8,7 @@ import { AuthProvider } from './context/AuthContext'; // Context'i import ettik
 import Explore from './pages/Explore/Explore.jsx';
 import EventDetail from './pages/Explore/EventDetail.jsx';
 import MyTickets from './pages/Sidebar/MyTickets';
+import Venues from './pages/Sidebar/Venues';
 import Wallet from './pages/Sidebar/Wallet';
 import Settings from './pages/Sidebar/Settings';
 
@@ -47,6 +48,7 @@ function App() {
                         }
                     />
                     <Route path="/tickets" element={<MyTickets />} />
+                    <Route path="/venues" element={<Venues />} />
                     <Route path="/wallet" element={<Wallet />} />
                     <Route path="/settings" element={<Settings />} />
                     <Route path="*" element={<Navigate to="/" />} /> {/* Yanlış adreste de Home'a atalım */}

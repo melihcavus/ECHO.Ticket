@@ -90,6 +90,7 @@ builder.Services.AddScoped<IJwtProvider, JwtProvider>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IMessageProducer, RabbitMQProducer>();
+builder.Services.AddScoped<IVenueService, VenueService>();
 
 builder.Services.AddCors(options => {
     options.AddPolicy("AllowReact", policy => {

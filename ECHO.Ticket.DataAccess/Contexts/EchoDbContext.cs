@@ -15,4 +15,5 @@ public class EchoDbContext : DbContext
     public DbSet<Core.Entities.Ticket> Tickets { get; set; } 
     //PROJE ADINDA DA TİCKET OLDUĞU İÇİN HANGİSİ OLDUĞUNU ANLAMIYORDU!!
     public DbSet<Pledge> Pledges { get; set; }
+    public DbSet<Venue> Venues { get; set; }
 }

@@ -123,7 +123,22 @@ const translations = {
         "currentBalance": "Current Balance",
         "loadBalanceTitle": "Load Balance",
         "amountToLoad": "Amount to Load (₺)",
-        "securePaymentBtn": "Make Secure Payment"
+        "securePaymentBtn": "Make Secure Payment",
+
+        // --- Venues ---
+        "venuesMenu": "Venues",
+        "venuesTitle": "Venues & Seating Plans",
+        "venuesDesc": "Manage all event venues and seating grids on the platform.",
+        "addNewVenue": "Add New Venue",
+        "venueName": "Venue Name",
+        "venueNamePlaceholder": "e.g. Open Air Theatre",
+        "rowCount": "Row Count (Letters)",
+        "colCount": "Column Count (Numbers)",
+        "saveVenue": "Save Venue",
+        "totalCapacity": "Total Capacity",
+        "seats": "seats",
+        "venueAddedSuccess": "Venue added successfully!",
+        "venuesLoadError": "Could not load venues."
     }
 };
 

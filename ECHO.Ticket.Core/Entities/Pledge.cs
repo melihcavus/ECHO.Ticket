@@ -13,4 +13,7 @@ public class Pledge
     // İlişkiler (Foreign Key) - Hangi bileti/paketi satın aldı?
     public Guid TicketId { get; set; }
     public Ticket Ticket { get; set; } = null!;
+    
+    public string? RowLabel { get; set; } // Örn: "A", "B", "C"
+    public int? ColumnNumber { get; set; } // Örn: 1, 2, 10
 }

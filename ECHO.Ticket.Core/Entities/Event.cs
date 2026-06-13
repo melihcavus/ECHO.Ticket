@@ -17,4 +17,7 @@ public class Event
     public User Organizer { get; set; } = null!;
     
     public string Category { get; set; } = "Diğer";
+    
+    public Guid? VenueId { get; set; }
+    public Venue? Venue { get; set; }
 }
