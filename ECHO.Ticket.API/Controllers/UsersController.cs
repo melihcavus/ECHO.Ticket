@@ -72,4 +72,16 @@ public class UsersController : ControllerBase
         var result = await _userService.AddBalanceAsync(request.Amount);
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
+    [HttpPut("change-password")]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto request)
+    {
+        var result = await _userService.ChangePasswordAsync(request);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+    [HttpPut("update-profile")]
+    public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileDto request)
+    {
+        var result = await _userService.UpdateProfileAsync(request);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
 }

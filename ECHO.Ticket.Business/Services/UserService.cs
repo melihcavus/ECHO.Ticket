@@ -137,4 +137,41 @@ public class UserService : IUserService
 
         return Result.Success("Bakiye başarıyla yüklendi.");
     }
+    public async Task<Result> ChangePasswordAsync(ChangePasswordDto request)
+    {
+        if (request.NewPassword != request.ConfirmPassword)
+            return Result.Failure("Yeni şifreler birbiriyle eşleşmiyor.");
+
+        var userId = _workContext.UserId;
+        var user = await _userRepository.GetByIdAsync(userId);
+
+        if (user == null)
+            return Result.Failure("Kullanıcı bulunamadı.");
+
+        if (!_passwordHasher.VerifyPassword(request.CurrentPassword, user.PasswordHash))
+            return Result.Failure("Mevcut şifreniz yanlış.");
+
+        user.PasswordHash = _passwordHasher.HashPassword(request.NewPassword);
+    
+        _userRepository.Update(user);
+        await _userRepository.SaveChangesAsync();
+
+        return Result.Success("Şifreniz başarıyla güncellendi.");
+    }
+    public async Task<Result> UpdateProfileAsync(UpdateProfileDto request)
+    {
+        var userId = _workContext.UserId;
+        var user = await _userRepository.GetByIdAsync(userId);
+
+        if (user == null)
+            return Result.Failure("Kullanıcı bulunamadı.");
+
+        user.FirstName = request.FirstName;
+        user.LastName = request.LastName;
+
+        _userRepository.Update(user);
+        await _userRepository.SaveChangesAsync();
+
+        return Result.Success("Profil bilgileri başarıyla güncellendi.");
+    }
 }

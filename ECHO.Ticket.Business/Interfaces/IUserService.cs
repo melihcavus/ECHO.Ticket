@@ -13,4 +13,6 @@ public interface IUserService
     Task<Result> UpdateUserAsync(UserUpdateDto userDto);
     Task<Result> DeleteUserAsync(Guid id);
     Task<Result> AddBalanceAsync(decimal amount);
+    Task<Result> ChangePasswordAsync(ChangePasswordDto request);
+    Task<Result> UpdateProfileAsync(UpdateProfileDto request);
 }

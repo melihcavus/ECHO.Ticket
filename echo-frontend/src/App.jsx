@@ -9,6 +9,7 @@ import Explore from './pages/Explore/Explore.jsx';
 import EventDetail from './pages/Explore/EventDetail.jsx';
 import MyTickets from './pages/Sidebar/MyTickets';
 import Wallet from './pages/Sidebar/Wallet';
+import Settings from './pages/Sidebar/Settings';
 
 function App() {
     return (
@@ -47,6 +48,7 @@ function App() {
                     />
                     <Route path="/tickets" element={<MyTickets />} />
                     <Route path="/wallet" element={<Wallet />} />
+                    <Route path="/settings" element={<Settings />} />
                     <Route path="*" element={<Navigate to="/" />} /> {/* Yanlış adreste de Home'a atalım */}
                 </Routes>
             </BrowserRouter>

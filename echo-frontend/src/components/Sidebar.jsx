@@ -51,9 +51,9 @@ function Sidebar({ activeMenu }) {
                 </nav>
             </div>
             <div className="p-4 border-t border-white/5 space-y-2 bg-[#0D162B]">
-                <div className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-[#1A2744] rounded-xl transition-all cursor-pointer">
+                <div onClick={() => navigate('/settings')} className={getMenuStyles('settings')}>
                     <Settings size={20} />
-                    <span className="font-medium">Ayarlar</span>
+                    <span>Ayarlar</span>
                 </div>
                 <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-xl transition-all">
                     <LogOut size={20} />
