@@ -27,9 +27,12 @@ function Explore() {
     const { t } = useLanguage();
 
     const [events, setEvents] = useState([]);
-    const [venues, setVenues] = useState([]); // SAHNE STATE'İ EKLENDİ
+    const [venues, setVenues] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
+
+    // Arama çubuğu için state
+    const [searchTerm, setSearchTerm] = useState('');
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -39,7 +42,7 @@ function Explore() {
         eventDate: '',
         location: '',
         category: 'Bilişim ve Teknoloji',
-        venueId: '' // VENUE ID EKLENDİ
+        venueId: ''
     });
 
     const fetchEvents = async () => {
@@ -70,7 +73,6 @@ function Explore() {
         }
     };
 
-    // SAHNELERİ GETİREN FONKSİYON EKLENDİ
     const fetchVenues = async () => {
         try {
             const token = localStorage.getItem('token');
@@ -88,7 +90,7 @@ function Explore() {
 
     useEffect(() => {
         fetchEvents();
-        fetchVenues(); // SAYFA YÜKLENDİĞİNDE SAHNELERİ DE ÇEK
+        fetchVenues();
     }, []);
 
     const handleCreateEvent = async (e) => {
@@ -110,7 +112,7 @@ function Explore() {
                     location: formData.location,
                     category: formData.category,
                     organizerId: user?.id,
-                    venueId: formData.venueId ? formData.venueId : null // PAYLOAD'A EKLENDİ (Boşsa null gider)
+                    venueId: formData.venueId ? formData.venueId : null
                 })
             });
 
@@ -119,7 +121,6 @@ function Explore() {
             if (response.ok && result.isSuccess) {
                 alert(t('eventCreated', 'Etkinlik başarıyla oluşturuldu!'));
                 setIsModalOpen(false);
-                // FORM SIFIRLAMA GÜNCELLENDİ
                 setFormData({ title: '', description: '', eventDate: '', location: '', category: 'Bilişim ve Teknoloji', venueId: '' });
                 fetchEvents();
             } else {
@@ -132,6 +133,16 @@ function Explore() {
             setIsSubmitting(false);
         }
     };
+
+    // Etkinlikleri filtreleme işlemi
+    const filteredEvents = events.filter((event) => {
+        const searchLower = searchTerm.toLowerCase();
+        return (
+            event.eventName?.toLowerCase().includes(searchLower) ||
+            event.category?.toLowerCase().includes(searchLower) ||
+            event.location?.toLowerCase().includes(searchLower)
+        );
+    });
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-[#0B1325] flex font-sans text-slate-900 dark:text-slate-200 transition-colors duration-300">
@@ -162,7 +173,13 @@ function Explore() {
 
                     <div className="relative w-full max-w-xl group mb-8 z-10">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 w-5 h-5 group-focus-within:text-cyan-600 dark:group-focus-within:text-cyan-400 transition-colors" />
-                        <input type="text" placeholder={t('searchPlaceholder', 'Kampanya, bilet ara...')} className="w-full bg-white dark:bg-[#111C3A] border border-slate-200 dark:border-white/5 rounded-2xl py-3 pl-12 pr-4 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-cyan-500/50 transition-all shadow-sm dark:shadow-inner" />
+                        <input
+                            type="text"
+                            placeholder={t('searchPlaceholder', 'Kampanya, bilet, kategori veya konum ara...')}
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full bg-white dark:bg-[#111C3A] border border-slate-200 dark:border-white/5 rounded-2xl py-3 pl-12 pr-4 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-cyan-500/50 transition-all shadow-sm dark:shadow-inner"
+                        />
                     </div>
 
                     {isLoading ? (
@@ -171,9 +188,13 @@ function Explore() {
                         <div className="text-center text-red-500 dark:text-red-400 py-10 relative z-10 font-medium">{error}</div>
                     ) : events.length === 0 ? (
                         <div className="text-center text-slate-500 dark:text-slate-400 py-10 relative z-10 bg-white dark:bg-[#111C3A]/50 rounded-3xl border border-slate-200 dark:border-white/5 shadow-sm">{t('noActiveCampaigns', 'Şu an aktif bir kampanya bulunmuyor.')}</div>
+                    ) : filteredEvents.length === 0 ? (
+                        <div className="text-center text-slate-500 dark:text-slate-400 py-10 relative z-10 bg-white dark:bg-[#111C3A]/50 rounded-3xl border border-slate-200 dark:border-white/5 shadow-sm">
+                            {t('noMatchingEvents', 'Arama kriterlerinize uygun etkinlik bulunamadı.')}
+                        </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10">
-                            {events.map((event) => (
+                            {filteredEvents.map((event) => (
                                 <div key={event.eventId} className="bg-white dark:bg-[#111C3A] rounded-3xl border border-slate-200 dark:border-white/5 hover:border-cyan-400 dark:hover:border-cyan-500/30 transition-all group shadow-md dark:shadow-xl dark:shadow-black/20 overflow-hidden flex flex-col">
                                     <div
                                         className="h-32 relative bg-slate-100 dark:bg-[#16244A]"
@@ -262,7 +283,6 @@ function Explore() {
                                     </select>
                                 </div>
 
-                                {/* SAHNE SEÇİMİ EKLENDİ */}
                                 <div>
                                     <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">{t('venueSelect', 'Sahne / Mekan (Opsiyonel)')}</label>
                                     <select

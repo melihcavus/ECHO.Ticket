@@ -149,7 +149,15 @@ const translations = {
         "seatTaken": "Taken",
         "availableSeat": "Available",
         "takenSeat": "Taken",
-        "selectedSeat": "Selected"
+        "selectedSeat": "Selected",
+
+        // --- Search ---
+        "searchPlaceholder": "Search campaigns, tickets, categories or locations...",
+        "noMatchingEvents": "No events found matching your search criteria.",
+        "searchTicketsPlaceholder": "Search by event, ticket type or transaction ID...",
+        "noMatchingTickets": "No tickets found matching your search criteria."
+        
+        
     }
 };
 

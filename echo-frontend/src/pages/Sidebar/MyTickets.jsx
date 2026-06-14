@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import Sidebar from '../../components/Sidebar';
 import Header from '../../components/Header';
-import { Ticket, CalendarDays, Receipt, X } from 'lucide-react';
+import { Ticket, CalendarDays, Receipt, X, Search } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 
 function MyTickets() {
@@ -16,6 +16,9 @@ function MyTickets() {
     const [tickets, setTickets] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
+
+    // Arama Çubuğu State'i
+    const [searchTerm, setSearchTerm] = useState('');
 
     // QR Modal State'i
     const [selectedTicket, setSelectedTicket] = useState(null);
@@ -52,6 +55,16 @@ function MyTickets() {
         }
     };
 
+    // Biletleri filtreleme işlemi
+    const filteredTickets = tickets.filter((ticket) => {
+        const searchLower = searchTerm.toLowerCase();
+        return (
+            ticket.eventTitle?.toLowerCase().includes(searchLower) ||
+            ticket.ticketName?.toLowerCase().includes(searchLower) ||
+            ticket.pledgeId?.toLowerCase().includes(searchLower)
+        );
+    });
+
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-[#0B1325] flex font-sans text-slate-900 dark:text-slate-200 transition-colors duration-300">
             <Sidebar activeMenu="tickets" />
@@ -66,6 +79,20 @@ function MyTickets() {
                         <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white mb-2 tracking-tight">{t('myTicketsTitle', 'Biletlerim ve Desteklerim')} 🎟️</h1>
                         <p className="text-slate-600 dark:text-slate-400 text-sm">{t('myTicketsDesc', 'Satın aldığınız tüm paketler ve destek olduğunuz projeler burada yer alır.')}</p>
                     </div>
+
+                    {/* ARAMA ÇUBUĞU */}
+                    {tickets.length > 0 && (
+                        <div className="relative w-full max-w-xl group mb-8 z-10">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 w-5 h-5 group-focus-within:text-cyan-600 dark:group-focus-within:text-cyan-400 transition-colors" />
+                            <input
+                                type="text"
+                                placeholder={t('searchTicketsPlaceholder', 'Etkinlik, bilet türü veya işlem ID ara...')}
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full bg-white dark:bg-[#111C3A] border border-slate-200 dark:border-white/5 rounded-2xl py-3 pl-12 pr-4 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-cyan-500/50 transition-all shadow-sm dark:shadow-inner"
+                            />
+                        </div>
+                    )}
 
                     {isLoading ? (
                         <div className="text-center text-cyan-600 dark:text-cyan-400 py-10 relative z-10 animate-pulse font-medium">{t('loadingTickets', 'Biletleriniz yükleniyor...')}</div>
@@ -85,9 +112,13 @@ function MyTickets() {
                                 {t('exploreProjectsBtn', 'Projeleri Keşfet')}
                             </button>
                         </div>
+                    ) : filteredTickets.length === 0 ? (
+                        <div className="text-center text-slate-500 dark:text-slate-400 py-10 relative z-10 bg-white dark:bg-[#111C3A]/50 rounded-3xl border border-slate-200 dark:border-white/5 shadow-sm">
+                            {t('noMatchingTickets', 'Arama kriterlerinize uygun bilet bulunamadı.')}
+                        </div>
                     ) : (
                         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 relative z-10">
-                            {tickets.map((ticket) => (
+                            {filteredTickets.map((ticket) => (
                                 <div
                                     key={ticket.pledgeId}
                                     onClick={() => setSelectedTicket(ticket)}
