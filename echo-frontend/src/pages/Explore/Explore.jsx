@@ -27,6 +27,7 @@ function Explore() {
     const { t } = useLanguage();
 
     const [events, setEvents] = useState([]);
+    const [venues, setVenues] = useState([]); // SAHNE STATE'İ EKLENDİ
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -37,7 +38,8 @@ function Explore() {
         description: '',
         eventDate: '',
         location: '',
-        category: 'Bilişim ve Teknoloji'
+        category: 'Bilişim ve Teknoloji',
+        venueId: '' // VENUE ID EKLENDİ
     });
 
     const fetchEvents = async () => {
@@ -68,8 +70,25 @@ function Explore() {
         }
     };
 
+    // SAHNELERİ GETİREN FONKSİYON EKLENDİ
+    const fetchVenues = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch('http://localhost:5216/api/Venues', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const result = await response.json();
+            if (response.ok && result.isSuccess) {
+                setVenues(result.data);
+            }
+        } catch (err) {
+            console.error("Sahneler çekilemedi:", err);
+        }
+    };
+
     useEffect(() => {
         fetchEvents();
+        fetchVenues(); // SAYFA YÜKLENDİĞİNDE SAHNELERİ DE ÇEK
     }, []);
 
     const handleCreateEvent = async (e) => {
@@ -90,7 +109,8 @@ function Explore() {
                     eventDate: new Date(formData.eventDate).toISOString(),
                     location: formData.location,
                     category: formData.category,
-                    organizerId: user?.id
+                    organizerId: user?.id,
+                    venueId: formData.venueId ? formData.venueId : null // PAYLOAD'A EKLENDİ (Boşsa null gider)
                 })
             });
 
@@ -99,7 +119,8 @@ function Explore() {
             if (response.ok && result.isSuccess) {
                 alert(t('eventCreated', 'Etkinlik başarıyla oluşturuldu!'));
                 setIsModalOpen(false);
-                setFormData({ title: '', description: '', eventDate: '', location: '', category: 'Bilişim ve Teknoloji' });
+                // FORM SIFIRLAMA GÜNCELLENDİ
+                setFormData({ title: '', description: '', eventDate: '', location: '', category: 'Bilişim ve Teknoloji', venueId: '' });
                 fetchEvents();
             } else {
                 alert(`${t('error', 'Hata')}: ${result.message || t('createFailed', 'Oluşturulamadı')}`);
@@ -238,6 +259,23 @@ function Explore() {
                                         <option value="Spor">Spor</option>
                                         <option value="Sanat ve Tasarım">Sanat ve Tasarım</option>
                                         <option value="Eğitim">Eğitim</option>
+                                    </select>
+                                </div>
+
+                                {/* SAHNE SEÇİMİ EKLENDİ */}
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">{t('venueSelect', 'Sahne / Mekan (Opsiyonel)')}</label>
+                                    <select
+                                        value={formData.venueId}
+                                        onChange={(e) => setFormData({...formData, venueId: e.target.value})}
+                                        className="w-full bg-slate-50 dark:bg-[#0B1325] border border-slate-200 dark:border-white/5 rounded-xl py-2.5 px-4 text-slate-900 dark:text-slate-300 focus:border-cyan-500/50 focus:outline-none appearance-none transition-colors"
+                                    >
+                                        <option value="">{t('noVenue', 'Sahne Yok / Ayakta / Çevrimiçi')}</option>
+                                        {venues.map(v => (
+                                            <option key={v.id} value={v.id}>
+                                                {v.name} (Kapasite: {v.rows * v.columns})
+                                            </option>
+                                        ))}
                                     </select>
                                 </div>
 

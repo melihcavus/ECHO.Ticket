@@ -138,7 +138,18 @@ const translations = {
         "totalCapacity": "Total Capacity",
         "seats": "seats",
         "venueAddedSuccess": "Venue added successfully!",
-        "venuesLoadError": "Could not load venues."
+        "venuesLoadError": "Could not load venues.",
+
+        "venueSelect": "Venue / Stage (Optional)",
+        "noVenue": "No Venue / Standing / Online",
+        "selectSeatAlert": "Please select a seat from the map first!",
+        "seatSelection": "Seat Selection",
+        "seatsSold": "Seats Sold",
+        "stage": "STAGE",
+        "seatTaken": "Taken",
+        "availableSeat": "Available",
+        "takenSeat": "Taken",
+        "selectedSeat": "Selected"
     }
 };
 

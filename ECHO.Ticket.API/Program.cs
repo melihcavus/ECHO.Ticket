@@ -13,15 +13,13 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using ECHO.Ticket.API.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
-// JWT Ayarlarını Okuma
+
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var secretKey = jwtSettings["Secret"];  
 
-// Add services to the container.
-
-// Authentication (Kimlik Doğrulama) Servisini Sisteme Ekleme
 builder.Services.AddAuthentication(options =>
     {
         options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -47,9 +45,22 @@ builder.Services.AddControllers();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IWorkContext, WorkContext>();
 
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+// SignalR Servisi Eklendi
+builder.Services.AddSignalR();
+
+// TEK BİR CORS POLİTİKASI (Hem normal API istekleri hem de SignalR için yeterli)
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReactApp", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173")
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials(); // SignalR WebSocket bağlantısı için zorunlu
+    });
+});
+
 builder.Services.AddEndpointsApiExplorer();
-//builder.Services.AddSwaggerGen();
 builder.Services.AddSwaggerGen(c =>
 {
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme()
@@ -73,11 +84,9 @@ builder.Services.AddSwaggerGen(c =>
     }});
 });
 
-// Veritabanı bağlantısını sisteme tanıtıyoruz
 builder.Services.AddDbContext<EchoDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Repository'imizi sisteme tanıtıyoruz
 builder.Services.AddScoped(typeof(IRepository<>), typeof(GenericRepository<>));
 
 builder.Services.AddValidatorsFromAssemblyContaining<EventValidator>();
@@ -92,17 +101,8 @@ builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IMessageProducer, RabbitMQProducer>();
 builder.Services.AddScoped<IVenueService, VenueService>();
 
-builder.Services.AddCors(options => {
-    options.AddPolicy("AllowReact", policy => {
-        policy.WithOrigins("http://localhost:5173") // React adresi
-            .AllowAnyHeader()
-            .AllowAnyMethod();
-    });
-});
-
 var app = builder.Build();  
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -111,10 +111,14 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseCors("AllowReact");
+// CORS Middleware'i sadece bir kez ve Authentication'dan önce çağrılmalı
+app.UseCors("AllowReactApp");
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+// SignalR Hub Endpoint'i
+app.MapHub<TicketHub>("/ticketHub");
 
 app.MapControllers();
 

@@ -7,4 +7,5 @@ public class EventCreateDto
     public Guid OrganizerId { get; set; }
     public string Location { get; set; } = string.Empty;
     public string Category { get; set; } = "Diğer";
+    public Guid? VenueId { get; set; }
 }

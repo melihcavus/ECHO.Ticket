@@ -13,4 +13,5 @@ public interface IEventService
     Task<Result> DeleteEventAsync(Guid id);
     Task<Result<IEnumerable<EventSummaryDto>>> GetActiveEventsSummaryAsync();
     Task<Result<EventDetailDto>> GetEventDetailAsync(Guid id);
+    Task<Result<IEnumerable<string>>> GetTakenSeatsAsync(Guid eventId);
 }

@@ -13,22 +13,25 @@ public class EventServiceTests
 {
     private readonly Mock<IRepository<Event>> _eventRepositoryMock;
     private readonly Mock<IValidator<Event>> _validatorMock;
-    private readonly EventService _eventService;
     private readonly Mock<IRepository<Core.Entities.Ticket>> _ticketRepositoryMock;
+    private readonly Mock<IRepository<Pledge>> _pledgeRepositoryMock;
+    private readonly Mock<IRepository<Venue>> _venueRepositoryMock;
+    private readonly EventService _eventService;
 
-    // Constructor dışarıdan parametre ALMAMALI
     public EventServiceTests() 
     {
-        // 1. Mock'ları içeride new'leyerek başlatıyoruz
         _eventRepositoryMock = new Mock<IRepository<Event>>();
         _validatorMock = new Mock<IValidator<Event>>();
         _ticketRepositoryMock = new Mock<IRepository<Core.Entities.Ticket>>(); 
+        _pledgeRepositoryMock = new Mock<IRepository<Pledge>>();
+        _venueRepositoryMock = new Mock<IRepository<Venue>>();
 
-        // 2. Servisi oluştururken üç mock nesnesinin Object halini sırayla veriyoruz
         _eventService = new EventService(
             _eventRepositoryMock.Object, 
             _validatorMock.Object, 
-            _ticketRepositoryMock.Object); // 3. parametre buraya eklendi!
+            _ticketRepositoryMock.Object,
+            _pledgeRepositoryMock.Object,
+            _venueRepositoryMock.Object); 
     }
 
     [Fact]
@@ -46,7 +49,7 @@ public class EventServiceTests
         result.IsSuccess.Should().BeTrue();
         result.Data.Should().NotBeNull();
         result.Data.Should().Be(expectedEvent);
-        result.Message.Should().BeEmpty(); // Success doesn't set message in this case
+        result.Message.Should().BeEmpty();
     }
 
     [Fact]

@@ -5,6 +5,7 @@ import { useLanguage } from '../../context/LanguageContext';
 import Sidebar from '../../components/Sidebar';
 import Header from '../../components/Header';
 import { CalendarDays, MapPin, User, CheckCircle2, Plus, X } from 'lucide-react';
+import { HubConnectionBuilder } from '@microsoft/signalr';
 
 function EventDetail() {
     const { id } = useParams();
@@ -25,6 +26,9 @@ function EventDetail() {
         price: '',
         capacity: ''
     });
+
+    const [takenSeats, setTakenSeats] = useState([]);
+    const [selectedSeat, setSelectedSeat] = useState(null);
 
     const fetchEventDetail = async () => {
         setIsLoading(true);
@@ -53,13 +57,50 @@ function EventDetail() {
         }
     };
 
+    const fetchTakenSeats = async () => {
+        try {
+            const response = await fetch(`http://localhost:5216/api/events/${id}/taken-seats`);
+            const result = await response.json();
+            if (response.ok && result.isSuccess) {
+                setTakenSeats(result.data);
+            }
+        } catch (err) {
+            console.error("Dolu koltuklar çekilemedi:", err);
+        }
+    };
+
     useEffect(() => {
         fetchEventDetail();
+        fetchTakenSeats();
+
+        const connection = new HubConnectionBuilder()
+            .withUrl("http://localhost:5216/ticketHub")
+            .withAutomaticReconnect()
+            .build();
+
+        connection.start()
+            .then(() => console.log("SignalR Bağlandı!"))
+            .catch(err => console.error("SignalR Bağlantı Hatası:", err));
+
+        connection.on("SeatSold", (eventId, seatLabel) => {
+            if (eventId === id) {
+                setTakenSeats(prev => [...new Set([...prev, seatLabel])]);
+            }
+        });
+
+        return () => {
+            connection.stop();
+        };
     }, [id]);
 
     const handleBuyTicket = async (ticketId) => {
         if (!user || !user.id) {
             alert(t('loginRequired', 'Satın alma işlemi için giriş yapmalısınız.'));
+            return;
+        }
+
+        if (eventData.venueId && !selectedSeat) {
+            alert(t('selectSeatAlert', 'Lütfen önce haritadan bir koltuk seçin!'));
             return;
         }
 
@@ -72,6 +113,14 @@ function EventDetail() {
 
         setIsPurchasing(true);
 
+        let rowLabel = null;
+        let colNumber = null;
+        if (selectedSeat) {
+            const parts = selectedSeat.split('-');
+            rowLabel = parts[0];
+            colNumber = parseInt(parts[1], 10);
+        }
+
         try {
             const token = localStorage.getItem('token');
             const response = await fetch('http://localhost:5216/api/Tickets/purchase', {
@@ -83,7 +132,9 @@ function EventDetail() {
                 body: JSON.stringify({
                     userId: user.id,
                     eventId: id,
-                    ticketId: ticketId
+                    ticketId: ticketId,
+                    rowLabel: rowLabel,
+                    columnNumber: colNumber
                 })
             });
 
@@ -98,6 +149,7 @@ function EventDetail() {
                 }
 
                 alert(t('purchaseSuccess', 'Satın alma işleminiz sıraya alındı! Stok düştüğünde sayfaya yansıyacaktır.'));
+                setSelectedSeat(null);
 
                 setTimeout(() => {
                     fetchEventDetail();
@@ -150,6 +202,87 @@ function EventDetail() {
         }
     };
 
+    const renderSeatMap = () => {
+        if (!eventData?.venueRows || !eventData?.venueColumns) return null;
+
+        const rows = Array.from({ length: eventData.venueRows }, (_, i) => String.fromCharCode(65 + i));
+        const cols = Array.from({ length: eventData.venueColumns }, (_, i) => i + 1);
+
+        const totalCapacity = eventData.venueRows * eventData.venueColumns;
+        const fillPercentage = totalCapacity === 0 ? 0 : (takenSeats.length / totalCapacity) * 100;
+
+        return (
+            <div className="bg-white dark:bg-[#111C3A] rounded-3xl border border-slate-200 dark:border-white/5 p-8 shadow-xl mt-8">
+                <div className="flex justify-between items-end mb-6">
+                    <div>
+                        <h2 className="text-xl font-bold text-slate-900 dark:text-white">{t('seatSelection', 'Koltuk Seçimi')}</h2>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">{eventData.venueName}</p>
+                    </div>
+                    <div className="text-right">
+                        <span className="text-sm font-bold text-slate-900 dark:text-white">{takenSeats.length} / {totalCapacity} {t('seatsSold', 'Koltuk Dolu')}</span>
+                    </div>
+                </div>
+
+                <div className="w-full bg-slate-100 dark:bg-[#0B1325] rounded-full h-3 overflow-hidden border border-slate-200 dark:border-white/5 mb-8">
+                    <div
+                        className="bg-gradient-to-r from-cyan-500 to-blue-500 h-full rounded-full transition-all duration-1000 ease-out"
+                        style={{ width: `${fillPercentage}%` }}
+                    ></div>
+                </div>
+
+                <div className="w-full max-w-4xl mx-auto overflow-x-auto pb-4">
+                    <div className="min-w-max flex flex-col gap-2 items-center">
+                        <div className="w-full max-w-2xl h-8 bg-slate-200 dark:bg-[#16244A] rounded-t-[100px] mb-8 flex items-center justify-center border-b-4 border-slate-300 dark:border-white/10">
+                            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 tracking-[0.5em]">{t('stage', 'SAHNE')}</span>
+                        </div>
+
+                        {rows.map(rowLabel => (
+                            <div key={rowLabel} className="flex gap-2 items-center">
+                                <div className="w-6 text-center text-xs font-bold text-slate-500 dark:text-slate-400">{rowLabel}</div>
+                                {cols.map(colNumber => {
+                                    const seatId = `${rowLabel}-${colNumber}`;
+                                    const isTaken = takenSeats.includes(seatId);
+                                    const isSelected = selectedSeat === seatId;
+
+                                    return (
+                                        <button
+                                            key={seatId}
+                                            disabled={isTaken}
+                                            onClick={() => setSelectedSeat(seatId)}
+                                            className={`w-8 h-8 rounded-t-lg rounded-b-sm text-[10px] font-bold transition-all
+                                                ${isTaken ? 'bg-red-500 dark:bg-red-500/80 text-white cursor-not-allowed border-b-4 border-red-700' :
+                                                isSelected ? 'bg-cyan-500 text-white border-b-4 border-cyan-700 -translate-y-1' :
+                                                    'bg-slate-200 dark:bg-[#16244A] text-slate-600 dark:text-slate-400 hover:bg-cyan-200 dark:hover:bg-cyan-900/50 border-b-4 border-slate-300 dark:border-[#0B1325]'}`}
+                                            title={isTaken ? t('seatTaken', 'Dolu') : seatId}
+                                        >
+                                            {colNumber}
+                                        </button>
+                                    );
+                                })}
+                                <div className="w-6 text-center text-xs font-bold text-slate-500 dark:text-slate-400">{rowLabel}</div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="flex justify-center gap-6 mt-8 pt-6 border-t border-slate-200 dark:border-white/5">
+                    <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 rounded-t-sm bg-slate-200 dark:bg-[#16244A]"></div>
+                        <span className="text-sm text-slate-600 dark:text-slate-400">{t('availableSeat', 'Boş')}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 rounded-t-sm bg-red-500 dark:bg-red-500/80"></div>
+                        <span className="text-sm text-slate-600 dark:text-slate-400">{t('takenSeat', 'Dolu')}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 rounded-t-sm bg-cyan-500"></div>
+                        <span className="text-sm text-slate-600 dark:text-slate-400">{t('selectedSeat', 'Seçili')}</span>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-[#0B1325] flex font-sans text-slate-900 dark:text-slate-200 transition-colors duration-300">
             <Sidebar activeMenu="explore" />
@@ -186,6 +319,8 @@ function EventDetail() {
                                     </div>
                                 </div>
                             </div>
+
+                            {renderSeatMap()}
 
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                                 <div className="lg:col-span-2 space-y-6">

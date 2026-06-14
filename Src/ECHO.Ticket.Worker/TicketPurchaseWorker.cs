@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
+using System.Net.Http.Json; 
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using ECHO.Ticket.Core.DTOs;
@@ -81,7 +82,9 @@ public class TicketPurchaseWorker : BackgroundService
                                     UserId = purchaseData.UserId,
                                     TicketId = purchaseData.TicketId,
                                     PledgeDate = DateTime.UtcNow,
-                                    AmountPaid = ticket.Price
+                                    AmountPaid = ticket.Price,
+                                    RowLabel = purchaseData.RowLabel, 
+                                    ColumnNumber = purchaseData.ColumnNumber 
                                 };
                                 await pledgeRepo.AddAsync(newPledge);
 
@@ -90,6 +93,18 @@ public class TicketPurchaseWorker : BackgroundService
                                 await pledgeRepo.SaveChangesAsync();
 
                                 _logger.LogInformation($"[v] Islem Basarili: Ticket ID {ticket.Id}. Kullanici {user.Id} bakiyesinden {ticket.Price} dusuldu.");
+
+                                if (!string.IsNullOrEmpty(purchaseData.RowLabel) && purchaseData.ColumnNumber.HasValue)
+                                {
+                                    using var client = new HttpClient();
+                                    var payload = new SeatSoldEventDto 
+                                    { 
+                                        EventId = purchaseData.EventId, 
+                                        SeatLabel = $"{purchaseData.RowLabel}-{purchaseData.ColumnNumber}" 
+                                    };
+                                    
+                                    await client.PostAsJsonAsync("http://localhost:5216/api/tickets/broadcast-seat", payload, stoppingToken);
+                                }
                             }
                             else
                             {

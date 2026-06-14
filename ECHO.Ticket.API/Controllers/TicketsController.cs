@@ -1,7 +1,10 @@
 using ECHO.Ticket.Business.Interfaces;
 using ECHO.Ticket.Business.RabbitMQ;
 using ECHO.Ticket.Core.DTOs;
+using ECHO.Ticket.API.Hubs;
+using Microsoft.AspNetCore.SignalR;
 using ECHO.Ticket.Core.Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TicketEntity = ECHO.Ticket.Core.Entities.Ticket;
 namespace ECHO.Ticket.API.Controllers;
@@ -73,5 +76,12 @@ public class TicketsController : ControllerBase
 
         // 3. Kullanıcıya "İşleminiz sıraya alındı" mesajı dönüyoruz (Bekletmiyoruz!)
         return Accepted(new { isSuccess = true, message = "Bilet alma talebiniz sıraya alındı. İşleminiz arka planda tamamlanacak." });
+    }
+    [HttpPost("broadcast-seat")]
+    [AllowAnonymous]
+    public async Task<IActionResult> BroadcastSeat([FromBody] SeatSoldEventDto dto, [FromServices] IHubContext<TicketHub> hubContext)
+    {
+        await hubContext.Clients.All.SendAsync("SeatSold", dto.EventId, dto.SeatLabel);
+        return Ok();
     }
 }

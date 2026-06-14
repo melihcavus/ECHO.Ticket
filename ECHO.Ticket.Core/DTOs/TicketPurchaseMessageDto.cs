@@ -6,4 +6,6 @@ public class TicketPurchaseMessageDto
     public Guid EventId { get; set; }
     public Guid TicketId { get; set; }
     public DateTime RequestDate { get; set; } = DateTime.UtcNow;
+    public string? RowLabel { get; set; }
+    public int? ColumnNumber { get; set; }
 }

@@ -5,6 +5,8 @@ using ECHO.Ticket.Core.Results;
 using ECHO.Ticket.DataAccess.Interfaces;
 using FluentValidation;
 using Mapster;
+using System.Linq; // Sum ve Where için
+using System.Threading.Tasks;
 using TicketEntity = ECHO.Ticket.Core.Entities.Ticket;
 
 namespace ECHO.Ticket.Business.Services;
@@ -13,15 +15,18 @@ public class TicketService : ITicketService
 {
     private readonly IRepository<TicketEntity> _ticketRepository;
     private readonly IRepository<Event> _eventRepository;
+    private readonly IRepository<Venue> _venueRepository; // SAHNE BİLGİSİ İÇİN EKLENDİ
     private readonly IValidator<TicketEntity> _validator; 
 
     public TicketService(
         IRepository<TicketEntity> ticketRepository, 
         IRepository<Event> eventRepository, 
+        IRepository<Venue> venueRepository, // SAHNE BİLGİSİ İÇİN EKLENDİ
         IValidator<TicketEntity> validator)
     {
         _ticketRepository = ticketRepository;
         _eventRepository = eventRepository;
+        _venueRepository = venueRepository; // SAHNE BİLGİSİ İÇİN EKLENDİ
         _validator = validator;
     }
 
@@ -56,10 +61,8 @@ public class TicketService : ITicketService
 
     public async Task<Result> AddTicketAsync(TicketCreateDto ticketDto)
     {
-        // 1. DTO'yu Entity'e dönüştür
         var newTicket = ticketDto.Adapt<TicketEntity>();
 
-        // 2. FluentValidation Kontrolü
         var validationResult = await _validator.ValidateAsync(newTicket);
         if (!validationResult.IsValid)
         {
@@ -67,16 +70,36 @@ public class TicketService : ITicketService
             return Result.Failure(errorMessage);
         }
 
-        // 3. Business Kontrolü: Etkinlik var mı?
         var existingEvent = await _eventRepository.GetByIdAsync(newTicket.EventId);
         if (existingEvent == null)
             return Result.Failure("Hata: Bilet eklemeye çalıştığınız etkinlik veritabanında bulunamadı!");
+
+        // YENİ EKLENEN: KAPASİTE KONTROL KURALI
+        if (existingEvent.VenueId.HasValue)
+        {
+            var venue = await _venueRepository.GetByIdAsync(existingEvent.VenueId.Value);
+            if (venue != null)
+            {
+                var totalVenueCapacity = venue.Rows * venue.Columns;
+                
+                var allTickets = await _ticketRepository.GetAllAsync();
+                var currentTicketsForEvent = allTickets.Where(t => t.EventId == newTicket.EventId).ToList();
+                
+                var currentTotalCapacity = currentTicketsForEvent.Sum(t => t.Capacity);
+                
+                if ((currentTotalCapacity + newTicket.Capacity) > totalVenueCapacity)
+                {
+                    return Result.Failure($"Hata: Sahne kapasitesi aşıldı! Bu sahnenin toplam kapasitesi {totalVenueCapacity}. Şu ana kadar {currentTotalCapacity} kapasitelik bilet eklendi.");
+                }
+            }
+        }
 
         await _ticketRepository.AddAsync(newTicket);
         await _ticketRepository.SaveChangesAsync();
 
         return Result.Success("Bilet/Paket başarıyla oluşturuldu.");
     }
+    
     public async Task<Result> UpdateTicketAsync(TicketUpdateDto ticketDto)
     {
         var existingTicket = await _ticketRepository.GetByIdAsync(ticketDto.Id);

@@ -13,12 +13,16 @@ public class EventService : IEventService
     private readonly IRepository<Event> _eventRepository;
     private readonly IValidator<Event> _validator;
     private readonly IRepository<Core.Entities.Ticket> _ticketRepository;
+    private readonly IRepository<Pledge> _pledgeRepository;
+    private readonly IRepository<Venue> _venueRepository;
 
-    public EventService(IRepository<Event> eventRepository, IValidator<Event> validator, IRepository<Core.Entities.Ticket> ticketRepository)
+    public EventService(IRepository<Event> eventRepository, IValidator<Event> validator, IRepository<Core.Entities.Ticket> ticketRepository, IRepository<Pledge> pledgeRepository, IRepository<Venue> venueRepository)
     {
         _eventRepository = eventRepository;
         _validator = validator;
         _ticketRepository = ticketRepository;
+        _pledgeRepository = pledgeRepository;
+        _venueRepository = venueRepository;
     }
 
     public async Task<Result<IEnumerable<Event>>> GetAllEventsAsync()
@@ -40,6 +44,7 @@ public class EventService : IEventService
     public async Task<Result> AddEventAsync(EventCreateDto eventDto)
     {
         var newEvent = eventDto.Adapt<Event>();
+        newEvent.VenueId = eventDto.VenueId;
         var validationResult = await _validator.ValidateAsync(newEvent);
         
         if (!validationResult.IsValid)
@@ -115,6 +120,12 @@ public class EventService : IEventService
                 return Result<EventDetailDto>.Failure("Etkinlik bulunamadı veya artık aktif değil.");
 
             var tickets = await _ticketRepository.FindAsync(t => t.EventId == id && t.IsActive);
+            
+            Venue? venue = null;
+            if (eventEntity.VenueId.HasValue)
+            {
+                venue = await _venueRepository.GetByIdAsync(eventEntity.VenueId.Value);
+            }
 
             var eventDetail = new EventDetailDto
             {
@@ -125,6 +136,10 @@ public class EventService : IEventService
                 Location = eventEntity.Location,
                 OrganizerName = "Organizatör",
                 Category = eventEntity.Category,
+                VenueId = venue?.Id,
+                VenueName = venue?.Name,
+                VenueRows = venue?.Rows,
+                VenueColumns = venue?.Columns,
                 Tickets = tickets.Select(t => new TicketDto
                 {
                     TicketId = t.Id,
@@ -141,6 +156,31 @@ public class EventService : IEventService
         catch (Exception ex)
         {
             return Result<EventDetailDto>.Failure($"Hata: {ex.Message}");
+        }
+    }
+    public async Task<Result<IEnumerable<string>>> GetTakenSeatsAsync(Guid eventId)
+    {
+        try
+        {
+            // Önce bu etkinliğe ait tüm biletleri bul
+            var tickets = await _ticketRepository.FindAsync(t => t.EventId == eventId);
+            var ticketIds = tickets.Select(t => t.Id).ToList();
+
+            if (!ticketIds.Any())
+                return Result<IEnumerable<string>>.Success(new List<string>());
+
+            // Sonra bu biletlerle yapılmış olan satışları (Pledges) bul
+            var allPledges = await _pledgeRepository.GetAllAsync();
+            var takenSeats = allPledges
+                .Where(p => ticketIds.Contains(p.TicketId) && !string.IsNullOrEmpty(p.RowLabel) && p.ColumnNumber.HasValue)
+                .Select(p => $"{p.RowLabel}-{p.ColumnNumber}") // Örn: "A-5"
+                .ToList();
+
+            return Result<IEnumerable<string>>.Success(takenSeats);
+        }
+        catch (Exception ex)
+        {
+            return Result<IEnumerable<string>>.Failure($"Dolu koltuklar alınırken hata oluştu: {ex.Message}");
         }
     }
 }

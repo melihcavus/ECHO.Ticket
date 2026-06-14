@@ -76,4 +76,17 @@ public class EventsController : ControllerBase
 
         return Ok(result);
     }
+    
+    // Dolu koltukları getiren endpoint
+    [HttpGet("{id:guid}/taken-seats")]
+    [AllowAnonymous] // Herkes görebilir
+    public async Task<IActionResult> GetTakenSeats(Guid id)
+    {
+        var result = await _eventService.GetTakenSeatsAsync(id);
+    
+        if (!result.IsSuccess)
+            return BadRequest(result);
+
+        return Ok(result);
+    }
 }

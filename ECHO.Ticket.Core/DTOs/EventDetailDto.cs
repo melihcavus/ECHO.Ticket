@@ -13,4 +13,9 @@ public class EventDetailDto
     // TicketDto'yu ayrı dosyada oluşturduğumuz için burada doğrudan liste olarak çağırabiliyoruz:
     public List<TicketDto> Tickets { get; set; } = new();
     public string Category { get; set; } = string.Empty;
+    
+    public Guid? VenueId { get; set; }
+    public string? VenueName { get; set; }
+    public int? VenueRows { get; set; }
+    public int? VenueColumns { get; set; }
 }
