@@ -84,6 +84,12 @@ builder.Services.AddSwaggerGen(c =>
     }});
 });
 
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = builder.Configuration.GetConnectionString("RedisConnection");
+    options.InstanceName = "EchoTicket_"; 
+});
+
 builder.Services.AddDbContext<EchoDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
