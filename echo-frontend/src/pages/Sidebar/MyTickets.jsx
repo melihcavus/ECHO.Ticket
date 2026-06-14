@@ -4,17 +4,21 @@ import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import Sidebar from '../../components/Sidebar';
 import Header from '../../components/Header';
-import { Ticket, CalendarDays, Receipt } from 'lucide-react';
+import { Ticket, CalendarDays, Receipt, X } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 
 function MyTickets() {
     const navigate = useNavigate();
     const { user } = useAuth();
-    
+
     const { t } = useLanguage();
 
     const [tickets, setTickets] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
+
+    // QR Modal State'i
+    const [selectedTicket, setSelectedTicket] = useState(null);
 
     useEffect(() => {
         if (user?.id) {
@@ -84,7 +88,11 @@ function MyTickets() {
                     ) : (
                         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 relative z-10">
                             {tickets.map((ticket) => (
-                                <div key={ticket.pledgeId} className="flex bg-white dark:bg-[#111C3A] rounded-3xl border border-slate-200 dark:border-white/5 shadow-md dark:shadow-xl overflow-hidden hover:border-cyan-400 dark:hover:border-cyan-500/30 transition-all group">
+                                <div
+                                    key={ticket.pledgeId}
+                                    onClick={() => setSelectedTicket(ticket)}
+                                    className="flex bg-white dark:bg-[#111C3A] rounded-3xl border border-slate-200 dark:border-white/5 shadow-md dark:shadow-xl overflow-hidden hover:border-cyan-400 dark:hover:border-cyan-500/30 transition-all group cursor-pointer hover:scale-[1.02]"
+                                >
                                     <div className="flex-1 p-6 flex flex-col justify-between">
                                         <div>
                                             <div className="inline-block px-3 py-1 bg-cyan-100 dark:bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 rounded-lg text-xs font-bold mb-3">
@@ -117,6 +125,47 @@ function MyTickets() {
                     )}
                 </div>
             </main>
+
+            {/* QR KOD MODALI */}
+            {selectedTicket && (
+                <div className="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm flex justify-center items-center z-50 p-4 transition-colors duration-300">
+                    <div className="bg-white dark:bg-[#111C3A] rounded-3xl border border-slate-200 dark:border-white/10 w-full max-w-sm shadow-2xl flex flex-col items-center p-8 relative transition-colors duration-300">
+
+                        <button
+                            onClick={() => setSelectedTicket(null)}
+                            className="absolute top-5 right-5 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors"
+                        >
+                            <X size={24} />
+                        </button>
+
+                        <h3 className="text-xl font-extrabold text-slate-900 dark:text-white mb-1 text-center">
+                            {selectedTicket.eventTitle}
+                        </h3>
+                        <p className="text-sm font-bold text-cyan-600 dark:text-cyan-400 mb-8 text-center">
+                            {selectedTicket.ticketName}
+                            {selectedTicket.rowLabel && ` • Koltuk: ${selectedTicket.rowLabel}${selectedTicket.columnNumber}`}
+                        </p>
+
+                        <div className="bg-white p-4 rounded-2xl shadow-inner border border-slate-200">
+                            <QRCodeSVG
+                                value={selectedTicket.pledgeId}
+                                size={200}
+                                bgColor={"#ffffff"}
+                                fgColor={"#0B1325"}
+                                level={"H"}
+                                includeMargin={false}
+                            />
+                        </div>
+
+                        <p className="mt-6 text-xs font-mono text-slate-500 dark:text-slate-400 break-all text-center">
+                            ECHO-{selectedTicket.pledgeId?.substring(0, 12).toUpperCase()}
+                        </p>
+                        <p className="mt-2 text-xs text-slate-600 dark:text-slate-500 font-medium">
+                            Giriş yaparken bu kodu görevliye okutunuz.
+                        </p>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
