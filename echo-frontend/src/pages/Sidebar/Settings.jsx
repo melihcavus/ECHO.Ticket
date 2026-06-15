@@ -8,15 +8,22 @@ import { User, Shield, Save, KeyRound } from 'lucide-react';
 
 function Settings() {
     const navigate = useNavigate();
-    const { user, setUser } = useAuth();
+    const { user, login } = useAuth();
     const { t } = useLanguage();
 
     const [activeTab, setActiveTab] = useState('profile');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // Aynı şehir listesini burada da kullanıyoruz
+    const cities = [
+        "İstanbul", "Ankara", "İzmir", "Bursa", "Antalya", "Adana", "Konya", "Gaziantep",
+        "Şanlıurfa", "Kocaeli", "Mersin", "Diyarbakır", "Eskişehir", "Samsun", "Diğer"
+    ];
+
     const [profileData, setProfileData] = useState({
         firstName: '',
-        lastName: ''
+        lastName: '',
+        location: '' // YENİ: State'e eklendi
     });
 
     const [securityData, setSecurityData] = useState({
@@ -29,7 +36,8 @@ function Settings() {
         if (user) {
             setProfileData({
                 firstName: user.firstName || '',
-                lastName: user.lastName || ''
+                lastName: user.lastName || '',
+                location: user.location || '' // YENİ: Context'ten alınıyor
             });
         }
     }, [user]);
@@ -48,7 +56,8 @@ function Settings() {
                 },
                 body: JSON.stringify({
                     firstName: profileData.firstName,
-                    lastName: profileData.lastName
+                    lastName: profileData.lastName,
+                    location: profileData.location // YENİ: Backende gönderiliyor
                 })
             });
 
@@ -56,13 +65,9 @@ function Settings() {
 
             if (response.ok && result.isSuccess) {
                 alert(t('profileUpdateSuccess', "Profil bilgileriniz başarıyla güncellendi!"));
-                if (setUser) {
-                    setUser(prev => ({
-                        ...prev,
-                        firstName: profileData.firstName,
-                        lastName: profileData.lastName
-                    }));
-                }
+                
+                login(result.data);
+
             } else {
                 alert(`${t('error', 'Hata')}: ${result.message || t('profileUpdateError', 'Profil güncellenemedi.')}`);
             }
@@ -188,6 +193,22 @@ function Settings() {
                                                     className="w-full bg-slate-50 dark:bg-[#0B1325] border border-slate-200 dark:border-white/5 rounded-xl py-3 px-4 text-slate-900 dark:text-white focus:border-cyan-500/50 focus:outline-none font-medium transition-colors"
                                                 />
                                             </div>
+                                        </div>
+
+                                        {/* YENİ: KONUM GÜNCELLEME ALANI */}
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">{t('location', 'Yaşadığınız Şehir')}</label>
+                                            <select
+                                                required
+                                                value={profileData.location}
+                                                onChange={(e) => setProfileData({...profileData, location: e.target.value})}
+                                                className="w-full bg-slate-50 dark:bg-[#0B1325] border border-slate-200 dark:border-white/5 rounded-xl py-3 px-4 text-slate-900 dark:text-white focus:border-cyan-500/50 focus:outline-none font-medium transition-colors appearance-none"
+                                            >
+                                                <option value="" disabled>Şehir Seçiniz</option>
+                                                {cities.map(city => (
+                                                    <option key={city} value={city}>{city}</option>
+                                                ))}
+                                            </select>
                                         </div>
 
                                         <div>

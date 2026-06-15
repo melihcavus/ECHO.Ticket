@@ -1,4 +1,4 @@
-import { Mail, Lock, EyeOff, User, Github, TrendingUp, Handshake, Users as UsersIcon, Loader2 } from 'lucide-react';
+import { Mail, Lock, EyeOff, User, Github, TrendingUp, Handshake, Users as UsersIcon, Loader2, MapPin } from 'lucide-react';
 import { useState } from 'react';
 import { registerUser } from '../../services/authService';
 
@@ -8,14 +8,22 @@ function SignUp() {
     const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [location, setLocation] = useState(''); // YENİ: Konum State'i
     const [loading, setLoading] = useState(false);
+
+    // Türkiye'nin büyük şehirleri (Modelin temiz veri öğrenmesi için standartlaştırdık)
+    const cities = [
+        "İstanbul", "Ankara", "İzmir", "Bursa", "Antalya", "Adana", "Konya", "Gaziantep",
+        "Şanlıurfa", "Kocaeli", "Mersin", "Diyarbakır", "Eskişehir", "Samsun", "Diğer"
+    ];
 
     // 2. Kayıt Fonksiyonu (API İsteği)
     const handleSignUp = async (e) => {
-        e.preventDefault(); // Sayfanın yenilenmesini engelle
+        e.preventDefault();
 
-        if (!firstName || !lastName || !email || !password) {
-            alert("Lütfen tüm alanları doldurun!");
+        // Konum kontrolü de eklendi
+        if (!firstName || !lastName || !email || !password || !location) {
+            alert("Lütfen tüm alanları (Konum dahil) doldurun!");
             return;
         }
 
@@ -26,12 +34,11 @@ function SignUp() {
                 firstName: firstName,
                 lastName: lastName,
                 email: email,
-                passwordHash: password // DTO'daki isme göre eşleştiriyoruz
+                passwordHash: password,
+                location: location // YENİ: Konum bilgisi backende gönderiliyor
             });
 
             alert("Kayıt Başarılı! ECHO sistemine hoş geldiniz. Şimdi giriş yapabilirsiniz.");
-
-            // Başarılı kayıttan sonra login sayfasına yönlendir
             window.location.href = '/login';
 
         } catch (error) {
@@ -45,8 +52,6 @@ function SignUp() {
 
     return (
         <div className="min-h-screen bg-[#0B1325] flex items-center justify-center p-4 relative overflow-hidden font-sans">
-
-            {/* Arka plan süslemeleri */}
             <div className="absolute top-1/4 -left-1/4 w-[600px] h-[600px] bg-cyan-600/10 rounded-full blur-[120px] pointer-events-none"></div>
             <div className="absolute bottom-1/4 -right-1/4 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none"></div>
 
@@ -87,8 +92,6 @@ function SignUp() {
                         </div>
 
                         <form onSubmit={handleSignUp} className="space-y-4">
-
-                            {/* Ad ve Soyad (Yan yana) */}
                             <div className="flex gap-4">
                                 <div className="relative w-1/2">
                                     <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
@@ -124,6 +127,22 @@ function SignUp() {
                                     placeholder="E-posta Adresi"
                                     className="w-full pl-11 pr-5 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-md focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:bg-white transition-all shadow-sm"
                                 />
+                            </div>
+
+                            {/* YENİ: KONUM SEÇİM ALANI */}
+                            <div className="relative">
+                                <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+                                <select
+                                    required
+                                    value={location}
+                                    onChange={(e) => setLocation(e.target.value)}
+                                    className={`w-full pl-11 pr-5 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-md focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:bg-white transition-all shadow-sm appearance-none ${location === '' ? 'text-slate-400' : 'text-slate-900'}`}
+                                >
+                                    <option value="" disabled>Yaşadığınız Şehir</option>
+                                    {cities.map(city => (
+                                        <option key={city} value={city} className="text-slate-900">{city}</option>
+                                    ))}
+                                </select>
                             </div>
 
                             <div className="relative">

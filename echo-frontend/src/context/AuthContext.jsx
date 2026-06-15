@@ -20,7 +20,8 @@ export const AuthProvider = ({ children }) => {
                     firstName: decoded.FirstName,
                     lastName: decoded.LastName,
                     email: decoded.email,
-                    role: decoded.role
+                    role: decoded.role,
+                    location: decoded.Location
                 });
             } catch (error) {
                 console.error("Token çözülemedi:", error);
@@ -39,7 +40,8 @@ export const AuthProvider = ({ children }) => {
             firstName: decoded.FirstName,
             lastName: decoded.LastName,
             email: decoded.email,
-            role: decoded.role
+            role: decoded.role,
+            location: decoded.Location
         });
     };
 

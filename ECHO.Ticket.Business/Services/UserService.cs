@@ -158,20 +158,23 @@ public class UserService : IUserService
 
         return Result.Success("Şifreniz başarıyla güncellendi.");
     }
-    public async Task<Result> UpdateProfileAsync(UpdateProfileDto request)
+    public async Task<Result<string>> UpdateProfileAsync(UpdateProfileDto request)
     {
         var userId = _workContext.UserId;
         var user = await _userRepository.GetByIdAsync(userId);
 
         if (user == null)
-            return Result.Failure("Kullanıcı bulunamadı.");
+            return Result<string>.Failure("Kullanıcı bulunamadı.");
 
         user.FirstName = request.FirstName;
         user.LastName = request.LastName;
+        user.Location = request.Location;
 
         _userRepository.Update(user);
         await _userRepository.SaveChangesAsync();
+        
+        var newToken = _jwtProvider.GenerateToken(user);
 
-        return Result.Success("Profil bilgileri başarıyla güncellendi.");
+        return Result<string>.Success(newToken, "Profil bilgileri başarıyla güncellendi.");
     }
 }

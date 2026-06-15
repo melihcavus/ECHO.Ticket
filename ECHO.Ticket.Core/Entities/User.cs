@@ -13,4 +13,5 @@ public class User
     public bool IsActive { get; set; } = true;
     public string Role { get; set; } = UserRoles.User;
     public decimal Balance { get; set; } = 0.00m; // Kullanıcı bakiyesi
+    public string Location { get; set; }
 }
