@@ -106,6 +106,8 @@ builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IMessageProducer, RabbitMQProducer>();
 builder.Services.AddScoped<IVenueService, VenueService>();
+builder.Services.AddHttpClient<IAiRecommendationService, AiRecommendationService>();
+builder.Services.AddScoped<IEventReviewService, EventReviewService>();
 
 var app = builder.Build();  
 

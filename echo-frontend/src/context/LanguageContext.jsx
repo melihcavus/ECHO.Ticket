@@ -155,9 +155,19 @@ const translations = {
         "searchPlaceholder": "Search campaigns, tickets, categories or locations...",
         "noMatchingEvents": "No events found matching your search criteria.",
         "searchTicketsPlaceholder": "Search by event, ticket type or transaction ID...",
-        "noMatchingTickets": "No tickets found matching your search criteria."
-        
-        
+        "noMatchingTickets": "No tickets found matching your search criteria.",
+
+        // --- Reviews ---
+        "reviewCount": "reviews",
+        "reviewsAndRatings": "Reviews and Ratings",
+        "writeReview": "Rate and Review",
+        "reviewPlaceholder": "Share your thoughts about the event...",
+        "sending": "Sending...",
+        "sendReview": "Submit Review",
+        "loginToReview": "Please log in to leave a review and rating.",
+        "noReviewsYet": "No reviews have been made for this event yet. Be the first to rate!",
+        "invalidRating": "Rating must be between 1 and 5.",
+        "reviewAddedSuccess": "Your review was added successfully!"
     }
 };
 

@@ -16,4 +16,5 @@ public class EchoDbContext : DbContext
     //PROJE ADINDA DA TİCKET OLDUĞU İÇİN HANGİSİ OLDUĞUNU ANLAMIYORDU!!
     public DbSet<Pledge> Pledges { get; set; }
     public DbSet<Venue> Venues { get; set; }
+    public DbSet<EventReview> EventReviews { get; set; }
 }

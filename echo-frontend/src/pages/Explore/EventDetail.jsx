@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import Sidebar from '../../components/Sidebar';
 import Header from '../../components/Header';
-import { CalendarDays, MapPin, User, CheckCircle2, Plus, X } from 'lucide-react';
+import { CalendarDays, MapPin, User, CheckCircle2, Plus, X, Star, MessageSquare } from 'lucide-react';
 import { HubConnectionBuilder } from '@microsoft/signalr';
 
 function EventDetail() {
@@ -29,6 +29,11 @@ function EventDetail() {
 
     const [takenSeats, setTakenSeats] = useState([]);
     const [selectedSeat, setSelectedSeat] = useState(null);
+
+    // YENİ EKLENEN STATE'LER: Yorumlar ve Puanlama
+    const [reviews, setReviews] = useState([]);
+    const [reviewForm, setReviewForm] = useState({ rating: 5, content: '' });
+    const [isReviewSubmitting, setIsReviewSubmitting] = useState(false);
 
     const fetchEventDetail = async () => {
         setIsLoading(true);
@@ -69,9 +74,23 @@ function EventDetail() {
         }
     };
 
+    // YENİ EKLENEN FONKSİYON: Yorumları Getir
+    const fetchReviews = async () => {
+        try {
+            const response = await fetch(`http://localhost:5216/api/EventReviews/event/${id}`);
+            const result = await response.json();
+            if (response.ok && result.isSuccess) {
+                setReviews(result.data);
+            }
+        } catch (err) {
+            console.error("Yorumlar çekilemedi:", err);
+        }
+    };
+
     useEffect(() => {
         fetchEventDetail();
         fetchTakenSeats();
+        fetchReviews(); // Sayfa yüklendiğinde yorumları da çek
 
         const connection = new HubConnectionBuilder()
             .withUrl("http://localhost:5216/ticketHub")
@@ -202,6 +221,50 @@ function EventDetail() {
         }
     };
 
+    // YENİ EKLENEN FONKSİYON: Yorum Gönderme İşlemi
+    const handleReviewSubmit = async (e) => {
+        e.preventDefault();
+        if (!user) {
+            alert(t('loginRequired', 'Yorum yapmak için giriş yapmalısınız.'));
+            return;
+        }
+
+        if (reviewForm.rating < 1 || reviewForm.rating > 5) {
+            alert(t('invalidRating', 'Puan 1 ile 5 arasında olmalıdır.'));
+            return;
+        }
+
+        setIsReviewSubmitting(true);
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch('http://localhost:5216/api/EventReviews/add-review', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    eventId: id,
+                    rating: reviewForm.rating,
+                    content: reviewForm.content
+                })
+            });
+
+            const result = await response.json();
+            if (response.ok && result.isSuccess) {
+                alert(t('reviewAddedSuccess', 'Yorumunuz başarıyla eklendi!'));
+                setReviewForm({ rating: 5, content: '' }); // Formu sıfırla
+                fetchReviews(); // Listeyi yenile
+            } else {
+                alert(`${t('error', 'Hata')}: ${result.message}`);
+            }
+        } catch (err) {
+            alert(t('serverComError', 'Sunucuyla iletişim kurulurken bir hata oluştu.'));
+        } finally {
+            setIsReviewSubmitting(false);
+        }
+    };
+
     const renderSeatMap = () => {
         if (!eventData?.venueRows || !eventData?.venueColumns) return null;
 
@@ -283,6 +346,11 @@ function EventDetail() {
         );
     };
 
+    // Ortalama puan hesabı
+    const averageRating = reviews.length > 0
+        ? (reviews.reduce((acc, curr) => acc + curr.rating, 0) / reviews.length).toFixed(1)
+        : 0;
+
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-[#0B1325] flex font-sans text-slate-900 dark:text-slate-200 transition-colors duration-300">
             <Sidebar activeMenu="explore" />
@@ -317,6 +385,12 @@ function EventDetail() {
                                         <User size={18} className="text-cyan-600 dark:text-cyan-500" />
                                         <span>{eventData.organizerName}</span>
                                     </div>
+                                    {/* YENİ EKLENEN YILDIZ GÖSTERİMİ */}
+                                    <div className="flex items-center gap-2 ml-auto">
+                                        <Star size={18} className="text-amber-400 fill-amber-400" />
+                                        <span className="font-bold text-slate-900 dark:text-white">{averageRating}</span>
+                                        <span className="text-sm">({reviews.length} {t('reviewCount', 'değerlendirme')})</span>
+                                    </div>
                                 </div>
                             </div>
 
@@ -330,8 +404,94 @@ function EventDetail() {
                                             {eventData.description || t('noDescription', 'Bu proje için henüz detaylı bir açıklama girilmemiştir.')}
                                         </p>
                                     </div>
+
+                                    {/* YENİ: YORUMLAR VE DEĞERLENDİRMELER BÖLÜMÜ BAŞLANGICI */}
+                                    <div className="bg-white dark:bg-[#111C3A] rounded-3xl border border-slate-200 dark:border-white/5 p-8 shadow-xl transition-colors duration-300 mt-8">
+                                        <div className="flex items-center gap-3 mb-6">
+                                            <MessageSquare size={24} className="text-cyan-600 dark:text-cyan-400" />
+                                            <h2 className="text-xl font-bold text-slate-900 dark:text-white">{t('reviewsAndRatings', 'Değerlendirmeler ve Yorumlar')}</h2>
+                                        </div>
+
+                                        {/* Yorum Yapma Formu */}
+                                        {user ? (
+                                            <form onSubmit={handleReviewSubmit} className="mb-8 p-6 bg-slate-50 dark:bg-[#0B1325]/50 rounded-2xl border border-slate-200 dark:border-white/5">
+                                                <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4">{t('writeReview', 'Sen de Değerlendir')}</h3>
+                                                <div className="flex items-center gap-2 mb-4">
+                                                    {[1, 2, 3, 4, 5].map(star => (
+                                                        <button
+                                                            key={star}
+                                                            type="button"
+                                                            onClick={() => setReviewForm(prev => ({ ...prev, rating: star }))}
+                                                            className="focus:outline-none"
+                                                        >
+                                                            <Star
+                                                                size={24}
+                                                                className={`transition-colors ${star <= reviewForm.rating ? 'text-amber-400 fill-amber-400' : 'text-slate-300 dark:text-slate-600'}`}
+                                                            />
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                                <textarea
+                                                    required
+                                                    rows="3"
+                                                    value={reviewForm.content}
+                                                    onChange={(e) => setReviewForm(prev => ({ ...prev, content: e.target.value }))}
+                                                    placeholder={t('reviewPlaceholder', 'Etkinlik hakkındaki düşüncelerini paylaş...')}
+                                                    className="w-full bg-white dark:bg-[#0B1325] border border-slate-200 dark:border-white/10 rounded-xl py-3 px-4 text-slate-900 dark:text-white focus:border-cyan-500/50 focus:outline-none resize-none transition-colors mb-4"
+                                                ></textarea>
+                                                <button
+                                                    type="submit"
+                                                    disabled={isReviewSubmitting}
+                                                    className={`px-6 py-2.5 rounded-xl font-bold transition-all shadow-md
+                                                        ${isReviewSubmitting ? 'bg-slate-300 dark:bg-slate-600 text-slate-500 dark:text-slate-400 cursor-not-allowed' : 'bg-cyan-600 hover:bg-cyan-500 text-white shadow-cyan-900/50 dark:shadow-cyan-900/50'}`}
+                                                >
+                                                    {isReviewSubmitting ? t('sending', 'Gönderiliyor...') : t('sendReview', 'Yorumu Gönder')}
+                                                </button>
+                                            </form>
+                                        ) : (
+                                            <div className="mb-8 p-4 text-center bg-cyan-50 dark:bg-cyan-500/10 rounded-2xl border border-cyan-100 dark:border-cyan-500/20 text-cyan-700 dark:text-cyan-400 text-sm font-medium">
+                                                {t('loginToReview', 'Yorum yapmak ve puan vermek için lütfen giriş yapın.')}
+                                            </div>
+                                        )}
+
+                                        {/* Yorumlar Listesi */}
+                                        <div className="space-y-4">
+                                            {reviews.length > 0 ? (
+                                                reviews.map(review => (
+                                                    <div key={review.id} className="p-5 border border-slate-100 dark:border-white/5 rounded-2xl bg-white dark:bg-[#111C3A]">
+                                                        <div className="flex justify-between items-start mb-2">
+                                                            <div>
+                                                                <h4 className="font-bold text-slate-900 dark:text-white text-sm">{review.userFullName}</h4>
+                                                                <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                                                    {new Date(review.createdAt).toLocaleDateString('tr-TR')}
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex items-center gap-1">
+                                                                {[...Array(5)].map((_, i) => (
+                                                                    <Star
+                                                                        key={i}
+                                                                        size={14}
+                                                                        className={i < review.rating ? 'text-amber-400 fill-amber-400' : 'text-slate-200 dark:text-slate-700'}
+                                                                    />
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                        <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed mt-3">
+                                                            {review.content}
+                                                        </p>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <div className="text-center py-6 text-slate-500 dark:text-slate-400 text-sm">
+                                                    {t('noReviewsYet', 'Bu etkinlik için henüz yorum yapılmamış. İlk değerlendiren sen ol!')}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                    {/* YORUMLAR BÖLÜMÜ BİTİŞİ */}
                                 </div>
 
+                                {/* SAĞ KOLON (Paketler vb.) */}
                                 <div className="space-y-6">
                                     <div className="flex items-center justify-between px-2">
                                         <h2 className="text-xl font-bold text-slate-900 dark:text-white">{t('supportPackages', 'Destek Paketleri')}</h2>

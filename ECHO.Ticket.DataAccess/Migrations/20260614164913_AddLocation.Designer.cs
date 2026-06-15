@@ -3,6 +3,7 @@ using System;
 using ECHO.Ticket.DataAccess.Contexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ECHO.Ticket.DataAccess.Migrations
 {
     [DbContext(typeof(EchoDbContext))]
-    partial class EchoDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260614164913_AddLocation")]
+    partial class AddLocation
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -66,37 +69,6 @@ namespace ECHO.Ticket.DataAccess.Migrations
                     b.HasIndex("VenueId");
 
                     b.ToTable("Events");
-                });
-
-            modelBuilder.Entity("ECHO.Ticket.Core.Entities.EventReview", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("EventId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Rating")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("EventId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("EventReviews");
                 });
 
             modelBuilder.Entity("ECHO.Ticket.Core.Entities.Pledge", b =>
@@ -245,25 +217,6 @@ namespace ECHO.Ticket.DataAccess.Migrations
                     b.Navigation("Organizer");
 
                     b.Navigation("Venue");
-                });
-
-            modelBuilder.Entity("ECHO.Ticket.Core.Entities.EventReview", b =>
-                {
-                    b.HasOne("ECHO.Ticket.Core.Entities.Event", "Event")
-                        .WithMany()
-                        .HasForeignKey("EventId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("ECHO.Ticket.Core.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Event");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("ECHO.Ticket.Core.Entities.Pledge", b =>
