@@ -7,4 +7,5 @@ public interface IEventReviewService
 {
     Task<Result> AddReviewAsync(EventReviewCreateDto reviewDto);
     Task<Result<IEnumerable<EventReviewDto>>> GetReviewsByEventIdAsync(Guid eventId);
+    Task<Result<EventAnalyticsDto>> GetEventAnalyticsAsync(Guid eventId);
 }

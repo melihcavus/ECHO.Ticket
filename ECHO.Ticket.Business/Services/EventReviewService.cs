@@ -14,18 +14,20 @@ namespace ECHO.Ticket.Business.Services;
 public class EventReviewService : IEventReviewService
 {
     private readonly IRepository<EventReview> _reviewRepository;
-    private readonly IRepository<User> _userRepository; // YENİ: Kullanıcıları çekmek için depo
+    private readonly IRepository<User> _userRepository;
     private readonly IWorkContext _workContext;
+    private readonly ISentimentAnalysisService _sentimentService;
 
-    // Constructor güncellendi
     public EventReviewService(
         IRepository<EventReview> reviewRepository, 
         IRepository<User> userRepository, 
-        IWorkContext workContext)
+        IWorkContext workContext,
+        ISentimentAnalysisService sentimentService)
     {
         _reviewRepository = reviewRepository;
         _userRepository = userRepository;
         _workContext = workContext;
+        _sentimentService = sentimentService;
     }
 
     public async Task<Result> AddReviewAsync(EventReviewCreateDto reviewDto)
@@ -39,24 +41,27 @@ public class EventReviewService : IEventReviewService
         newReview.UserId = userId;
         newReview.CreatedAt = DateTime.UtcNow;
 
+        var aiResult = await _sentimentService.AnalyzeReviewAsync(reviewDto.Content);
+        
+        newReview.SentimentLabel = aiResult.Label;
+        newReview.SentimentScore = aiResult.Score;
+
         await _reviewRepository.AddAsync(newReview);
         await _reviewRepository.SaveChangesAsync();
 
-        return Result.Success("Yorumunuz ve puanınız başarıyla kaydedildi.");
+        return Result.Success("Yorumunuz başarıyla kaydedildi ve yapay zeka tarafından analiz edildi.");
     }
 
     public async Task<Result<IEnumerable<EventReviewDto>>> GetReviewsByEventIdAsync(Guid eventId)
     {
-        // 1. Tüm yorumları çek
-        var allReviews = await _reviewRepository.GetAllAsync();
-        var eventReviews = allReviews.Where(r => r.EventId == eventId).ToList();
+        // PERFORMANS ÇÖZÜMÜ: Sadece bu etkinliğe ait yorumları veritabanından çeker
+        var eventReviews = (await _reviewRepository.FindAsync(r => r.EventId == eventId)).ToList();
 
-        // 2. Yorum yapan kullanıcıların ID'lerini bul ve o kullanıcıları veritabanından çek
         var userIds = eventReviews.Select(r => r.UserId).Distinct().ToList();
-        var allUsers = await _userRepository.GetAllAsync();
-        var reviewUsers = allUsers.Where(u => userIds.Contains(u.Id)).ToList();
+        
+        // Kullanıcıları çekerken de filtreleme uygulayabiliriz (Opsiyonel ama daha iyi)
+        var reviewUsers = (await _userRepository.FindAsync(u => userIds.Contains(u.Id))).ToList();
 
-        // 3. Yorumlarla kullanıcı isimlerini birleştirerek DTO'yu oluştur
         var reviewDtos = eventReviews.Select(r => 
         {
             var user = reviewUsers.FirstOrDefault(u => u.Id == r.UserId);
@@ -65,13 +70,84 @@ public class EventReviewService : IEventReviewService
             {
                 Id = r.Id,
                 UserId = r.UserId,
-                UserFullName = user != null ? $"{user.FirstName} {user.LastName}" : "ECHO Kullanıcısı", // ARTK GERÇEK İSİM GELECEK!
+                UserFullName = user != null ? $"{user.FirstName} {user.LastName}" : "ECHO Kullanıcısı",
                 Rating = r.Rating,
                 Content = r.Content,
-                CreatedAt = r.CreatedAt
+                CreatedAt = r.CreatedAt,
+                SentimentLabel = r.SentimentLabel,
+                SentimentScore = r.SentimentScore
             };
-        }).OrderByDescending(r => r.CreatedAt); // En yeni yorumlar en üstte görünsün
+        }).OrderByDescending(r => r.CreatedAt);
 
         return Result<IEnumerable<EventReviewDto>>.Success(reviewDtos);
+    }
+
+    public async Task<Result<EventAnalyticsDto>> GetEventAnalyticsAsync(Guid eventId)
+    {
+        // PERFORMANS ÇÖZÜMÜ: Tüm tabloyu çekmek yerine sadece ilgili etkinliğin yorumlarını al
+        var eventReviews = (await _reviewRepository.FindAsync(r => r.EventId == eventId)).ToList();
+
+        if (!eventReviews.Any())
+        {
+            return Result<EventAnalyticsDto>.Success(new EventAnalyticsDto
+            {
+                EventId = eventId,
+                SatisfactionScore = 0
+            }, "Bu etkinlik için henüz yorum yapılmamış.");
+        }
+
+        int total = eventReviews.Count;
+        double threshold = 80.0; 
+
+        int positive = eventReviews.Count(r => 
+            r.SentimentLabel?.Equals("POSITIVE", StringComparison.OrdinalIgnoreCase) == true && 
+            r.SentimentScore >= threshold);
+
+        int negative = eventReviews.Count(r => 
+            r.SentimentLabel?.Equals("NEGATIVE", StringComparison.OrdinalIgnoreCase) == true && 
+            r.SentimentScore >= threshold);
+
+        int neutral = total - positive - negative;
+
+        double satisfaction = total > 0 ? Math.Round((double)positive / total * 100, 2) : 0;
+
+        var criticalEntities = eventReviews
+            .Where(r => r.SentimentLabel?.Equals("NEGATIVE", StringComparison.OrdinalIgnoreCase) == true)
+            .OrderByDescending(r => r.SentimentScore)
+            .Take(5)
+            .ToList();
+
+        var userIds = criticalEntities.Select(r => r.UserId).Distinct().ToList();
+        var reviewUsers = (await _userRepository.FindAsync(u => userIds.Contains(u.Id))).ToList();
+
+        var criticalDtos = criticalEntities.Select(r => 
+        {
+            var user = reviewUsers.FirstOrDefault(u => u.Id == r.UserId);
+            return new EventReviewDto
+            {
+                Id = r.Id,
+                UserId = r.UserId,
+                UserFullName = user != null ? $"{user.FirstName} {user.LastName}" : "ECHO Kullanıcısı",
+                Rating = r.Rating,
+                Content = r.Content,
+                CreatedAt = r.CreatedAt,
+                SentimentLabel = r.SentimentLabel,
+                // BUG FIX: Zaten 100 üzerinden olduğu için bir daha çarpmıyoruz.
+                SentimentScore = r.SentimentScore != null ? Math.Round(r.SentimentScore.Value, 2) : 0
+            };
+        }).ToList();
+
+        var analytics = new EventAnalyticsDto
+        {
+            EventId = eventId,
+            TotalReviews = total,
+            PositiveCount = positive,
+            NegativeCount = negative,
+            NeutralCount = neutral,
+            SatisfactionScore = satisfaction,
+            CriticalReviews = criticalDtos
+        };
+
+        return Result<EventAnalyticsDto>.Success(analytics);
     }
 }

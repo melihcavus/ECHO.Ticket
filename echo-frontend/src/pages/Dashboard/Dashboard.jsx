@@ -10,14 +10,32 @@ import {
     Wallet,
     TrendingUp,
     CalendarDays,
-    Activity
+    Activity,
+    Sparkles
 } from 'lucide-react';
+
+// Kategori görsellerini Dashboard'a da dahil ediyoruz
+import techImg from '../../assets/categories/technology.jpg';
+import sportImg from '../../assets/categories/sports.jpg';
+import artImg from '../../assets/categories/art.jpg';
+import eduImg from '../../assets/categories/education.jpg';
+
+const getCategoryImage = (categoryName) => {
+    switch(categoryName) {
+        case 'Spor': return sportImg;
+        case 'Sanat ve Tasarım': return artImg;
+        case 'Eğitim': return eduImg;
+        case 'Bilişim ve Teknoloji':
+        default: return techImg;
+    }
+};
 
 function Dashboard() {
     const navigate = useNavigate();
     const { user } = useAuth();
     const { t } = useLanguage();
 
+    // Mevcut Dashboard State'leri
     const [summaryData, setSummaryData] = useState({
         totalPledgeAmount: 0,
         activeProjectCount: 0,
@@ -27,6 +45,12 @@ function Dashboard() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    // Yapay Zeka Öneri State'leri
+    const [aiRecommendations, setAiRecommendations] = useState([]);
+    const [isAiLoading, setIsAiLoading] = useState(false);
+    const [aiError, setAiError] = useState(null);
+
+    // Dashboard özetini çeken efekt
     useEffect(() => {
         const fetchDashboardSummary = async () => {
             if (!user?.id) {
@@ -65,7 +89,36 @@ function Dashboard() {
         };
 
         fetchDashboardSummary();
-    }, [user?.id]);
+    }, [user?.id, t]);
+
+    // Yapay Zeka önerilerini çeken efekt
+    useEffect(() => {
+        const fetchAiRecommendations = async () => {
+            if (!user?.id) return;
+
+            setIsAiLoading(true);
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`http://localhost:5216/api/Recommendation/ForUser/${user.id}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) throw new Error('AI servisine ulaşılamadı');
+
+                const data = await response.json();
+                setAiRecommendations(data);
+            } catch (err) {
+                console.error("Yapay Zeka Hatası:", err);
+                setAiError(t('aiLoadError', 'Öneriler yüklenirken bir sorun oluştu.'));
+            } finally {
+                setIsAiLoading(false);
+            }
+        };
+
+        fetchAiRecommendations();
+    }, [user?.id, t]);
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-[#0B1325] flex font-sans text-slate-900 dark:text-slate-200 transition-colors duration-300">
@@ -97,6 +150,7 @@ function Dashboard() {
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 relative z-10">
+                            {/* MEVCUT 3'LÜ KART YAPISI (Değişmedi) */}
                             <div className="bg-white dark:bg-[#111C3A] p-6 rounded-3xl border border-slate-200 dark:border-white/5 hover:border-emerald-400 dark:hover:border-emerald-500/30 transition-all group shadow-md dark:shadow-xl dark:shadow-black/20">
                                 <div className="flex justify-between items-start mb-4">
                                     <div>
@@ -158,6 +212,57 @@ function Dashboard() {
                             </div>
                         </div>
                     )}
+
+                    {/* --- YENİ YERİNDE YAPAY ZEKA VİTRİNİ BAŞLANGICI --- */}
+                    {user?.id && (
+                        <div className="mb-10 relative z-10">
+                            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
+                                <Sparkles className="text-cyan-500" size={24} />
+                                {t('aiRecommendationsTitle', 'Senin İçin Seçildi')} 🎯
+                            </h2>
+
+                            {isAiLoading ? (
+                                <div className="text-sm text-cyan-600 dark:text-cyan-400 animate-pulse bg-cyan-50 dark:bg-cyan-900/10 p-4 rounded-2xl border border-cyan-100 dark:border-cyan-900/30">
+                                    {t('aiLoadingText', 'Yapay zeka profilini analiz ediyor ve en uygun etkinlikleri seçiyor...')}
+                                </div>
+                            ) : aiError ? (
+                                <div className="text-sm text-red-500 p-4 bg-red-50 dark:bg-red-900/10 rounded-2xl border border-red-100 dark:border-red-900/30">
+                                    {aiError}
+                                </div>
+                            ) : aiRecommendations.length > 0 ? (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                    {aiRecommendations.map((event) => {
+                                        // İsim problemini çözmek için muhtemel property isimlerini yakalıyoruz
+                                        const eventName = event.title || event.eventName || event.name || "Bilinmeyen Etkinlik";
+                                        const eventId = event.id || event.eventId;
+
+                                        return (
+                                            <div key={eventId} className="bg-white dark:bg-[#111C3A] rounded-3xl border border-slate-200 dark:border-white/5 hover:border-cyan-400 dark:hover:border-cyan-500/30 transition-all group shadow-md dark:shadow-xl dark:shadow-black/20 overflow-hidden flex flex-col relative cursor-pointer" onClick={() => navigate(`/event/${eventId}`)}>
+                                                <div className="absolute top-4 right-4 px-3 py-1 bg-cyan-500 text-white text-[11px] font-bold rounded-full z-10 shadow-lg flex items-center gap-1">
+                                                    <Sparkles size={12} /> Yapay Zeka Önerisi
+                                                </div>
+                                                <div
+                                                    className="h-32 relative bg-slate-100 dark:bg-[#16244A]"
+                                                    style={{ backgroundImage: `url(${getCategoryImage(event.category)})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+                                                >
+                                                    <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-[#111C3A] to-transparent"></div>
+                                                </div>
+                                                <div className="p-6 flex-1 flex flex-col">
+                                                    <h3 className="font-bold text-slate-900 dark:text-white mb-2 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors line-clamp-2" title={eventName}>
+                                                        {eventName}
+                                                    </h3>
+                                                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-6">{event.category}</p>
+                                                    <button className="mt-auto w-full py-2.5 bg-slate-50 dark:bg-white/5 hover:bg-cyan-50 dark:hover:bg-cyan-600/20 text-cyan-700 dark:text-cyan-400 border border-slate-200 dark:border-white/5 hover:border-cyan-400 dark:hover:border-cyan-500/30 rounded-xl font-bold text-sm transition-all">
+                                                        {t('viewProject', 'Projeyi İncele')}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )})}
+                                </div>
+                            ) : null}
+                        </div>
+                    )}
+                    {/* --- YAPAY ZEKA VİTRİNİ BİTİŞ --- */}
 
                     {summaryData.recentActivities && summaryData.recentActivities.length > 0 ? (
                         <div className="bg-white dark:bg-[#111C3A] rounded-3xl border border-slate-200 dark:border-white/5 overflow-hidden relative z-10 shadow-md dark:shadow-xl dark:shadow-black/20 p-8 transition-colors duration-300">

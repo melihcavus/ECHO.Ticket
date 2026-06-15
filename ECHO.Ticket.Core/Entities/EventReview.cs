@@ -20,4 +20,9 @@ public class EventReview
     
     // Yorumun yapılma tarihi
     public DateTime CreatedAt { get; set; }
+    // YENİ: Yapay Zeka Duygu Analizi Çıktıları
+    public string SentimentLabel { get; set; } // Örn: "POSITIVE" veya "NEGATIVE"
+    
+    // Eski yorumlarda bu değer olmayacağı için (nullable) 'double?' yapıyoruz
+    public double? SentimentScore { get; set; } // Örn: 95.50
 }

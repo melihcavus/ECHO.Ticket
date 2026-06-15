@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import {
-    LayoutDashboard, Ticket, FolderHeart, Wallet, Settings, LogOut, Grid3X3
+    LayoutDashboard, Ticket, FolderHeart, Wallet, Settings, LogOut, Grid3X3, BrainCircuit
 } from 'lucide-react';
 
 function Sidebar({ activeMenu }) {
@@ -56,6 +56,18 @@ function Sidebar({ activeMenu }) {
                             <span>{t('venuesMenu', 'Sahneler')}</span>
                         </div>
                     )}
+
+                    {/* SADECE ADMIN GÖREBİLİR */}
+                    {user?.role === 'Admin' && (
+                        <>
+                            <div className="h-px bg-white/10 my-4 mx-4"></div>
+                            <div onClick={() => navigate('/analytics')} className={getMenuStyles('analytics')}>
+                                <BrainCircuit size={20} />
+                                <span>AI Analitik</span>
+                            </div>
+                        </>
+                    )}
+
                 </nav>
             </div>
             <div className="p-4 border-t border-white/5 space-y-2 bg-[#0D162B]">

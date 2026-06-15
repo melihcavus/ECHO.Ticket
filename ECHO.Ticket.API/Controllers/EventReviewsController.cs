@@ -46,4 +46,15 @@ public class EventReviewsController : ControllerBase
 
         return BadRequest(result);
     }
+    
+    [HttpGet("analytics/{eventId:guid}")]
+// [Authorize(Roles = "Admin,Organizer")] // Yalnızca admin ve organizatör görsün
+    public async Task<IActionResult> GetAnalytics(Guid eventId)
+    {
+        var result = await _reviewService.GetEventAnalyticsAsync(eventId);
+        if (!result.IsSuccess)
+            return BadRequest(result);
+
+        return Ok(result);
+    }
 }

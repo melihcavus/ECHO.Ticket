@@ -8,4 +8,6 @@ public class EventReviewDto
     public int Rating { get; set; }
     public string Content { get; set; }
     public DateTime CreatedAt { get; set; }
+    public string SentimentLabel { get; set; }
+    public double? SentimentScore { get; set; }
 }

@@ -10,6 +10,7 @@ import EventDetail from './pages/Explore/EventDetail.jsx';
 import MyTickets from './pages/Sidebar/MyTickets';
 import Venues from './pages/Sidebar/Venues';
 import Wallet from './pages/Sidebar/Wallet';
+import AiAnalytics from './pages/Sidebar/AiAnalytics';
 import Settings from './pages/Sidebar/Settings';
 
 function App() {
@@ -50,6 +51,7 @@ function App() {
                     <Route path="/tickets" element={<MyTickets />} />
                     <Route path="/venues" element={<Venues />} />
                     <Route path="/wallet" element={<Wallet />} />
+                    <Route path="/analytics" element={<AiAnalytics />} />
                     <Route path="/settings" element={<Settings />} />
                     <Route path="*" element={<Navigate to="/" />} /> {/* Yanlış adreste de Home'a atalım */}
                 </Routes>
