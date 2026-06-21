@@ -17,9 +17,23 @@ using ECHO.Ticket.API.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// --- 1. CONFIGURATION & JWT SETTINGS ---
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var secretKey = jwtSettings["Secret"];  
 
+// --- 2. CORS POLICY (Bulut ortamı için tüm frontend bağlantılarına açıldı) ---
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontends", policy =>
+    {
+        policy.SetIsOriginAllowed(_ => true) // Tüm kaynaklara izin ver
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials(); // SignalR WebSocket bağlantısı için zorunlu
+    });
+});
+
+// --- 3. AUTHENTICATION & AUTHORIZATION ---
 builder.Services.AddAuthentication(options =>
     {
         options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -40,26 +54,12 @@ builder.Services.AddAuthentication(options =>
     });
 builder.Services.AddAuthorization();
 
+// --- 4. CORE SERVICES & SIGNALR ---
 builder.Services.AddControllers();
-    
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddScoped<IWorkContext, WorkContext>();
-
-// SignalR Servisi Eklendi
 builder.Services.AddSignalR();
 
-// TEK BİR CORS POLİTİKASI (Hem normal API istekleri hem de SignalR için yeterli)
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowReactApp", policy =>
-    {
-        policy.WithOrigins("http://localhost:5173")
-            .AllowAnyHeader()
-            .AllowAnyMethod()
-            .AllowCredentials(); // SignalR WebSocket bağlantısı için zorunlu
-    });
-});
-
+// --- 5. SWAGGER CONFIGURATION ---
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -84,15 +84,19 @@ builder.Services.AddSwaggerGen(c =>
     }});
 });
 
+// --- 6. CACHING (REDIS) ---
 builder.Services.AddStackExchangeRedisCache(options =>
 {
     options.Configuration = builder.Configuration.GetConnectionString("RedisConnection");
     options.InstanceName = "EchoTicket_"; 
 });
 
+// --- 7. DATABASE (POSTGRESQL) ---
 builder.Services.AddDbContext<EchoDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+// --- 8. DEPENDENCY INJECTION (DI) ---
+builder.Services.AddScoped<IWorkContext, WorkContext>();
 builder.Services.AddScoped(typeof(IRepository<>), typeof(GenericRepository<>));
 
 builder.Services.AddValidatorsFromAssemblyContaining<EventValidator>();
@@ -106,28 +110,29 @@ builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IMessageProducer, RabbitMQProducer>();
 builder.Services.AddScoped<IVenueService, VenueService>();
-builder.Services.AddHttpClient<ISentimentAnalysisService, SentimentAnalysisService>();
 builder.Services.AddScoped<IEventReviewService, EventReviewService>();
+
+// HttpClients
+builder.Services.AddHttpClient<ISentimentAnalysisService, SentimentAnalysisService>();
+builder.Services.AddHttpClient<IAiRecommendationService, AiRecommendationService>();
 
 var app = builder.Build();  
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+// --- 9. MIDDLEWARE PIPELINE ---
+// Render'da canlıdayken de Swagger arayüzünü görebilmek için "if" kontrolünü kaldırdık.
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
 
-// CORS Middleware'i sadece bir kez ve Authentication'dan önce çağrılmalı
-app.UseCors("AllowReactApp");
+// CORS Middleware'i (Sırası çok önemli: Auth'dan önce olmalı)
+app.UseCors("AllowFrontends");
 
 app.UseAuthentication();
 app.UseAuthorization();
 
-// SignalR Hub Endpoint'i
+// Hub ve Controller Map'leri
 app.MapHub<TicketHub>("/ticketHub");
-
 app.MapControllers();
 
 app.Run();

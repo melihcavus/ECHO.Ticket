@@ -3,6 +3,7 @@ using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 using ECHO.Ticket.Business.Interfaces;
 
 namespace ECHO.Ticket.Business.Services;
@@ -10,12 +11,20 @@ namespace ECHO.Ticket.Business.Services;
 public class SentimentAnalysisService : ISentimentAnalysisService
 {
     private readonly HttpClient _httpClient;
+    private readonly IConfiguration _configuration;
 
-    public SentimentAnalysisService(HttpClient httpClient)
+    public SentimentAnalysisService(HttpClient httpClient, IConfiguration configuration)
     {
         _httpClient = httpClient;
-        // Python sunucumuzun adresi
-        _httpClient.BaseAddress = new Uri("http://127.0.0.1:8000/"); 
+        _configuration = configuration;
+        
+        // Render panelinden linki okur, bulamazsa senin bilgisayarındaki 8000 portunu kullanır.
+        var aiUrl = _configuration["AIServices__SentimentUrl"] ?? "http://127.0.0.1:8000/";
+        
+        // HttpClient BaseAddress sonuna mutlaka '/' ister.
+        if (!aiUrl.EndsWith("/")) aiUrl += "/";
+        
+        _httpClient.BaseAddress = new Uri(aiUrl); 
     }
 
     public async Task<(string Label, double Score)> AnalyzeReviewAsync(string reviewText)

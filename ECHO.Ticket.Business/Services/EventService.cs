@@ -16,7 +16,10 @@ public class EventService : IEventService
     private readonly IRepository<Pledge> _pledgeRepository;
     private readonly IRepository<Venue> _venueRepository;
 
-    public EventService(IRepository<Event> eventRepository, IValidator<Event> validator, IRepository<Core.Entities.Ticket> ticketRepository, IRepository<Pledge> pledgeRepository, IRepository<Venue> venueRepository)
+    // Somut sınıflara (concrete) değil, soyutlamalara (interface) bağımlılık (DIP)
+    public EventService(IRepository<Event> eventRepository, IValidator<Event> validator,
+        IRepository<Core.Entities.Ticket> ticketRepository, IRepository<Pledge> pledgeRepository,
+        IRepository<Venue> venueRepository)
     {
         _eventRepository = eventRepository;
         _validator = validator;
@@ -45,6 +48,8 @@ public class EventService : IEventService
     {
         var newEvent = eventDto.Adapt<Event>();
         newEvent.VenueId = eventDto.VenueId;
+        
+        // IValidator kontratına uyan herhangi bir sınıf burada sistemi bozmadan çalışabilir (LSP)
         var validationResult = await _validator.ValidateAsync(newEvent);
         
         if (!validationResult.IsValid)

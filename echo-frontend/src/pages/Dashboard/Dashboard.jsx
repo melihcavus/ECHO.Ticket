@@ -99,7 +99,9 @@ function Dashboard() {
             setIsAiLoading(true);
             try {
                 const token = localStorage.getItem('token');
-                const response = await fetch(`http://localhost:5216/api/Recommendation/ForUser/${user.id}`, {
+
+                // REVİZE 1: Yeni Controller Endpoint'imize İstek Atıyoruz
+                const response = await fetch(`http://localhost:5216/api/Recommendation/personal-picks/${user.id}`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -107,8 +109,14 @@ function Dashboard() {
 
                 if (!response.ok) throw new Error('AI servisine ulaşılamadı');
 
-                const data = await response.json();
-                setAiRecommendations(data);
+                const result = await response.json();
+
+                // REVİZE 2: Yeni C# JSON Mimarisini (isSuccess ve data) Karşılama
+                if (result.isSuccess && result.data) {
+                    setAiRecommendations(result.data);
+                } else {
+                    setAiError(result.message || t('aiLoadError', 'Öneriler yüklenirken bir sorun oluştu.'));
+                }
             } catch (err) {
                 console.error("Yapay Zeka Hatası:", err);
                 setAiError(t('aiLoadError', 'Öneriler yüklenirken bir sorun oluştu.'));
@@ -232,7 +240,6 @@ function Dashboard() {
                             ) : aiRecommendations.length > 0 ? (
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                     {aiRecommendations.map((event) => {
-                                        // İsim problemini çözmek için muhtemel property isimlerini yakalıyoruz
                                         const eventName = event.title || event.eventName || event.name || "Bilinmeyen Etkinlik";
                                         const eventId = event.id || event.eventId;
 
@@ -311,4 +318,5 @@ function Dashboard() {
         </div>
     );
 }
+
 export default Dashboard;

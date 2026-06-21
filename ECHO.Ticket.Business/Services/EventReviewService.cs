@@ -41,6 +41,7 @@ public class EventReviewService : IEventReviewService
         newReview.UserId = userId;
         newReview.CreatedAt = DateTime.UtcNow;
 
+        // Yapay zeka analizi dış bir servise devrediliyor (SRP)
         var aiResult = await _sentimentService.AnalyzeReviewAsync(reviewDto.Content);
         
         newReview.SentimentLabel = aiResult.Label;

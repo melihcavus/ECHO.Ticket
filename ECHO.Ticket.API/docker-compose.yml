@@ -32,5 +32,27 @@ services:
       - "6379:6379"
     restart: always
 
+  # --- YENİ EKLENEN YAPAY ZEKA SERVİSLERİ ---
+
+  echo-ai-sentiment:
+    # Docker'a diyoruz ki: "Bir üst klasöre çık, ECHO_AI klasörüne gir ve oradaki Dockerfile'ı çalıştır"
+    build:
+      context: ../../ECHO_AI
+    container_name: echo_ai_sentiment
+    ports:
+      - "8000:8000"
+    command: uvicorn sentiment_api:app --host 0.0.0.0 --port 8000
+    restart: unless-stopped
+
+  echo-ai-recommender:
+    # İkisi de aynı klasördeki aynı imajı kullanacak, sadece çalıştırdıkları API dosyaları farklı
+    build:
+      context: ../../ECHO_AI
+    container_name: echo_ai_recommender
+    ports:
+      - "8001:8001"
+    command: uvicorn recommender_api:app --host 0.0.0.0 --port 8001
+    restart: unless-stopped
+
 volumes:
   echo_pgdata:

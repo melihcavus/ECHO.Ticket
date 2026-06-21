@@ -7,8 +7,10 @@ using ECHO.Ticket.DataAccess.Interfaces;
 
 namespace ECHO.Ticket.Business.Services;
 
-public class DashboardService : IDashboardService
+// Spesifik ihtiyaçlara göre bölünmüş arayüzler (ISP)
+public class DashboardService : IDashboardService /* Sadece Dashboard metodları */ 
 {
+    // Veritabanı teknolojisine bağımlı değil, gelişime açık (OCP)
     private readonly IRepository<Pledge> _pledgeRepository;
     private readonly IRepository<Event> _eventRepository;
     private readonly IRepository<Core.Entities.Ticket> _ticketRepository;
