@@ -31,14 +31,13 @@ public class TicketPurchaseWorker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        // BURASI DEĞİŞTİ: Artık Uri ve ConnectionString kullanıyoruz
-        var connectionString = _configuration.GetConnectionString("RabbitMQConnection") 
-                               ?? "amqp://guest:guest@localhost:5672/";
-
         var factory = new ConnectionFactory 
-        { 
-            Uri = new Uri(connectionString) 
-        };
+                { 
+                    HostName = _configuration["RabbitMQ:Host"] ?? "localhost",
+                    Port = 5672,
+                    UserName = _configuration["RabbitMQ:User"] ?? "guest",
+                    Password = _configuration["RabbitMQ:Pass"] ?? "guest"
+                };
         
         await using var connection = await factory.CreateConnectionAsync(stoppingToken);
         await using var channel = await connection.CreateChannelAsync(cancellationToken: stoppingToken);
