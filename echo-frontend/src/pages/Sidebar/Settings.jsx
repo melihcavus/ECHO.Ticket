@@ -6,6 +6,9 @@ import Sidebar from '../../components/Sidebar';
 import Header from '../../components/Header';
 import { User, Shield, Save, KeyRound } from 'lucide-react';
 
+// API'mizi içeri aktarıyoruz
+import api from '../../services/api';
+
 function Settings() {
     const navigate = useNavigate();
     const { user, login } = useAuth();
@@ -14,7 +17,6 @@ function Settings() {
     const [activeTab, setActiveTab] = useState('profile');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Aynı şehir listesini burada da kullanıyoruz
     const cities = [
         "İstanbul", "Ankara", "İzmir", "Bursa", "Antalya", "Adana", "Konya", "Gaziantep",
         "Şanlıurfa", "Kocaeli", "Mersin", "Diyarbakır", "Eskişehir", "Samsun", "Diğer"
@@ -23,7 +25,7 @@ function Settings() {
     const [profileData, setProfileData] = useState({
         firstName: '',
         lastName: '',
-        location: '' // YENİ: State'e eklendi
+        location: ''
     });
 
     const [securityData, setSecurityData] = useState({
@@ -37,7 +39,7 @@ function Settings() {
             setProfileData({
                 firstName: user.firstName || '',
                 lastName: user.lastName || '',
-                location: user.location || '' // YENİ: Context'ten alınıyor
+                location: user.location || ''
             });
         }
     }, [user]);
@@ -47,32 +49,21 @@ function Settings() {
         setIsSubmitting(true);
 
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5216/api/Users/update-profile', {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    firstName: profileData.firstName,
-                    lastName: profileData.lastName,
-                    location: profileData.location // YENİ: Backende gönderiliyor
-                })
+            // Axios ile PUT isteği
+            const response = await api.put('/Users/update-profile', {
+                firstName: profileData.firstName,
+                lastName: profileData.lastName,
+                location: profileData.location
             });
 
-            const result = await response.json();
-
-            if (response.ok && result.isSuccess) {
+            if (response.data.isSuccess) {
                 alert(t('profileUpdateSuccess', "Profil bilgileriniz başarıyla güncellendi!"));
-                
-                login(result.data);
-
+                login(response.data.data); // Yeni token'ı kaydet
             } else {
-                alert(`${t('error', 'Hata')}: ${result.message || t('profileUpdateError', 'Profil güncellenemedi.')}`);
+                alert(`${t('error', 'Hata')}: ${response.data.message || t('profileUpdateError', 'Profil güncellenemedi.')}`);
             }
         } catch (err) {
-            alert(t('serverComError', "Sunucuyla iletişim kurulurken bir hata oluştu."));
+            alert(err.response?.data?.message || t('serverComError', "Sunucuyla iletişim kurulurken bir hata oluştu."));
         } finally {
             setIsSubmitting(false);
         }
@@ -88,30 +79,21 @@ function Settings() {
         setIsSubmitting(true);
 
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5216/api/Users/change-password', {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    currentPassword: securityData.currentPassword,
-                    newPassword: securityData.newPassword,
-                    confirmPassword: securityData.confirmPassword
-                })
+            // Axios ile PUT isteği
+            const response = await api.put('/Users/change-password', {
+                currentPassword: securityData.currentPassword,
+                newPassword: securityData.newPassword,
+                confirmPassword: securityData.confirmPassword
             });
 
-            const result = await response.json();
-
-            if (response.ok && result.isSuccess) {
+            if (response.data.isSuccess) {
                 alert(t('passwordUpdateSuccess', "Şifreniz başarıyla güncellendi!"));
                 setSecurityData({ currentPassword: '', newPassword: '', confirmPassword: '' });
             } else {
-                alert(`${t('error', 'Hata')}: ${result.message || t('passwordUpdateError', 'Şifre güncellenemedi.')}`);
+                alert(`${t('error', 'Hata')}: ${response.data.message || t('passwordUpdateError', 'Şifre güncellenemedi.')}`);
             }
         } catch (err) {
-            alert(t('serverComError', "Sunucuyla iletişim kurulurken bir hata oluştu."));
+            alert(err.response?.data?.message || t('serverComError', "Sunucuyla iletişim kurulurken bir hata oluştu."));
         } finally {
             setIsSubmitting(false);
         }
@@ -195,7 +177,6 @@ function Settings() {
                                             </div>
                                         </div>
 
-                                        {/* YENİ: KONUM GÜNCELLEME ALANI */}
                                         <div>
                                             <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">{t('location', 'Yaşadığınız Şehir')}</label>
                                             <select

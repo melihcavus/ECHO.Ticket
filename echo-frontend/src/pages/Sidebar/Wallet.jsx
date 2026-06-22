@@ -6,6 +6,9 @@ import Sidebar from '../../components/Sidebar';
 import Header from '../../components/Header';
 import { Wallet as WalletIcon, CreditCard, Plus } from 'lucide-react';
 
+// API'mizi içeri aktarıyoruz
+import api from '../../services/api';
+
 function Wallet() {
     const navigate = useNavigate();
     const { user, setUser } = useAuth();
@@ -30,19 +33,12 @@ function Wallet() {
 
         setIsSubmitting(true);
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5216/api/Users/add-balance', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ amount: parseFloat(amount) })
+            // Axios ile POST isteği
+            const response = await api.post('/Users/add-balance', {
+                amount: parseFloat(amount)
             });
 
-            const result = await response.json();
-
-            if (response.ok && result.isSuccess) {
+            if (response.data.isSuccess) {
                 alert(t('balanceLoadSuccess', "Bakiye başarıyla yüklendi!"));
                 const addedAmount = parseFloat(amount);
                 const updatedBalance = currentBalance + addedAmount;
@@ -58,10 +54,10 @@ function Wallet() {
 
                 setAmount('');
             } else {
-                alert(`${t('error', 'Hata')}: ${result.message || t('balanceLoadFailed', 'Yükleme işlemi başarısız.')}`);
+                alert(`${t('error', 'Hata')}: ${response.data.message || t('balanceLoadFailed', 'Yükleme işlemi başarısız.')}`);
             }
         } catch (err) {
-            alert(t('serverComError', "Sunucuyla iletişim kurulurken bir hata oluştu."));
+            alert(err.response?.data?.message || t('serverComError', "Sunucuyla iletişim kurulurken bir hata oluştu."));
         } finally {
             setIsSubmitting(false);
         }

@@ -14,11 +14,13 @@ import {
     Sparkles
 } from 'lucide-react';
 
-// Kategori görsellerini Dashboard'a da dahil ediyoruz
 import techImg from '../../assets/categories/technology.jpg';
 import sportImg from '../../assets/categories/sports.jpg';
 import artImg from '../../assets/categories/art.jpg';
 import eduImg from '../../assets/categories/education.jpg';
+
+// API'mizi içeri aktarıyoruz
+import api from '../../services/api';
 
 const getCategoryImage = (categoryName) => {
     switch(categoryName) {
@@ -35,7 +37,6 @@ function Dashboard() {
     const { user } = useAuth();
     const { t } = useLanguage();
 
-    // Mevcut Dashboard State'leri
     const [summaryData, setSummaryData] = useState({
         totalPledgeAmount: 0,
         activeProjectCount: 0,
@@ -45,12 +46,10 @@ function Dashboard() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Yapay Zeka Öneri State'leri
     const [aiRecommendations, setAiRecommendations] = useState([]);
     const [isAiLoading, setIsAiLoading] = useState(false);
     const [aiError, setAiError] = useState(null);
 
-    // Dashboard özetini çeken efekt
     useEffect(() => {
         const fetchDashboardSummary = async () => {
             if (!user?.id) {
@@ -61,28 +60,16 @@ function Dashboard() {
 
             setIsLoading(true);
             try {
-                const token = localStorage.getItem('token');
+                // Axios ile tek satırda temiz istek
+                const response = await api.get(`/dashboard/summary/${user.id}`);
 
-                const response = await fetch(`http://localhost:5216/api/dashboard/summary/${user.id}`, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-
-                if (!response.ok) {
-                    throw new Error(t('fetchError', 'Veri çekilemedi'));
-                }
-
-                const result = await response.json();
-
-                if (result.isSuccess) {
-                    setSummaryData(result.data);
+                if (response.data.isSuccess) {
+                    setSummaryData(response.data.data);
                 } else {
-                    setError(result.message);
+                    setError(response.data.message);
                 }
             } catch (err) {
-                setError(t('statsLoadError', 'İstatistikler yüklenemedi.'));
+                setError(err.response?.data?.message || t('statsLoadError', 'İstatistikler yüklenemedi.'));
             } finally {
                 setIsLoading(false);
             }
@@ -91,35 +78,23 @@ function Dashboard() {
         fetchDashboardSummary();
     }, [user?.id, t]);
 
-    // Yapay Zeka önerilerini çeken efekt
     useEffect(() => {
         const fetchAiRecommendations = async () => {
             if (!user?.id) return;
 
             setIsAiLoading(true);
             try {
-                const token = localStorage.getItem('token');
+                // Axios ile tek satırda temiz istek
+                const response = await api.get(`/Recommendation/personal-picks/${user.id}`);
 
-                // REVİZE 1: Yeni Controller Endpoint'imize İstek Atıyoruz
-                const response = await fetch(`http://localhost:5216/api/Recommendation/personal-picks/${user.id}`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-
-                if (!response.ok) throw new Error('AI servisine ulaşılamadı');
-
-                const result = await response.json();
-
-                // REVİZE 2: Yeni C# JSON Mimarisini (isSuccess ve data) Karşılama
-                if (result.isSuccess && result.data) {
-                    setAiRecommendations(result.data);
+                if (response.data.isSuccess && response.data.data) {
+                    setAiRecommendations(response.data.data);
                 } else {
-                    setAiError(result.message || t('aiLoadError', 'Öneriler yüklenirken bir sorun oluştu.'));
+                    setAiError(response.data.message || t('aiLoadError', 'Öneriler yüklenirken bir sorun oluştu.'));
                 }
             } catch (err) {
                 console.error("Yapay Zeka Hatası:", err);
-                setAiError(t('aiLoadError', 'Öneriler yüklenirken bir sorun oluştu.'));
+                setAiError(err.response?.data?.message || t('aiLoadError', 'Öneriler yüklenirken bir sorun oluştu.'));
             } finally {
                 setIsAiLoading(false);
             }
@@ -158,7 +133,6 @@ function Dashboard() {
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 relative z-10">
-                            {/* MEVCUT 3'LÜ KART YAPISI (Değişmedi) */}
                             <div className="bg-white dark:bg-[#111C3A] p-6 rounded-3xl border border-slate-200 dark:border-white/5 hover:border-emerald-400 dark:hover:border-emerald-500/30 transition-all group shadow-md dark:shadow-xl dark:shadow-black/20">
                                 <div className="flex justify-between items-start mb-4">
                                     <div>
@@ -221,7 +195,6 @@ function Dashboard() {
                         </div>
                     )}
 
-                    {/* --- YENİ YERİNDE YAPAY ZEKA VİTRİNİ BAŞLANGICI --- */}
                     {user?.id && (
                         <div className="mb-10 relative z-10">
                             <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
@@ -269,7 +242,6 @@ function Dashboard() {
                             ) : null}
                         </div>
                     )}
-                    {/* --- YAPAY ZEKA VİTRİNİ BİTİŞ --- */}
 
                     {summaryData.recentActivities && summaryData.recentActivities.length > 0 ? (
                         <div className="bg-white dark:bg-[#111C3A] rounded-3xl border border-slate-200 dark:border-white/5 overflow-hidden relative z-10 shadow-md dark:shadow-xl dark:shadow-black/20 p-8 transition-colors duration-300">

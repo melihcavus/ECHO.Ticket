@@ -7,6 +7,9 @@ import Header from '../../components/Header';
 import { Ticket, CalendarDays, Receipt, X, Search } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 
+// API'mizi içeri aktarıyoruz
+import api from '../../services/api';
+
 function MyTickets() {
     const navigate = useNavigate();
     const { user } = useAuth();
@@ -17,10 +20,7 @@ function MyTickets() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Arama Çubuğu State'i
     const [searchTerm, setSearchTerm] = useState('');
-
-    // QR Modal State'i
     const [selectedTicket, setSelectedTicket] = useState(null);
 
     useEffect(() => {
@@ -33,29 +33,21 @@ function MyTickets() {
 
     const fetchMyTickets = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`http://localhost:5216/api/Pledges/user/${user.id}`, {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                }
-            });
+            // Axios ile tek satırda temiz istek
+            const response = await api.get(`/Pledges/user/${user.id}`);
 
-            const result = await response.json();
-
-            if (response.ok && result.isSuccess) {
-                setTickets(result.data);
+            if (response.data.isSuccess) {
+                setTickets(response.data.data);
             } else {
-                setError(result.message || t('ticketsLoadError', 'Biletler yüklenemedi.'));
+                setError(response.data.message || t('ticketsLoadError', 'Biletler yüklenemedi.'));
             }
         } catch (err) {
-            setError(t('serverConnError', 'Sunucu bağlantı hatası.'));
+            setError(err.response?.data?.message || t('serverConnError', 'Sunucu bağlantı hatası.'));
         } finally {
             setIsLoading(false);
         }
     };
 
-    // Biletleri filtreleme işlemi
     const filteredTickets = tickets.filter((ticket) => {
         const searchLower = searchTerm.toLowerCase();
         return (
@@ -80,7 +72,6 @@ function MyTickets() {
                         <p className="text-slate-600 dark:text-slate-400 text-sm">{t('myTicketsDesc', 'Satın aldığınız tüm paketler ve destek olduğunuz projeler burada yer alır.')}</p>
                     </div>
 
-                    {/* ARAMA ÇUBUĞU */}
                     {tickets.length > 0 && (
                         <div className="relative w-full max-w-xl group mb-8 z-10">
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 w-5 h-5 group-focus-within:text-cyan-600 dark:group-focus-within:text-cyan-400 transition-colors" />
@@ -157,7 +148,6 @@ function MyTickets() {
                 </div>
             </main>
 
-            {/* QR KOD MODALI */}
             {selectedTicket && (
                 <div className="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm flex justify-center items-center z-50 p-4 transition-colors duration-300">
                     <div className="bg-white dark:bg-[#111C3A] rounded-3xl border border-slate-200 dark:border-white/10 w-full max-w-sm shadow-2xl flex flex-col items-center p-8 relative transition-colors duration-300">
