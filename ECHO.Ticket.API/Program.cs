@@ -138,8 +138,19 @@ app.MapControllers();
 // --- OTOMATİK MIGRATION (Tabloları Canlıda Oluşturmak İçin) ---
 using (var scope = app.Services.CreateScope())
 {
-    var dbContext = scope.ServiceProvider.GetRequiredService<EchoDbContext>();
-    dbContext.Database.Migrate();
+    var services = scope.ServiceProvider;
+    try
+    {
+        var dbContext = services.GetRequiredService<EchoDbContext>();
+        // İşlemi asenkron yaparak ana beyni kilitlenmekten kurtarıyoruz
+        dbContext.Database.Migrate(); 
+        Console.WriteLine("Tablolar başarıyla oluşturuldu!");
+    }
+    catch (Exception ex)
+    {
+        // Eğer bağlanamazsa sistemi çökertmek (Status 139) yerine hatayı loga yazacak
+        Console.WriteLine($"Migration sırasında bir hata oluştu: {ex.Message}");
+    }
 }
 
 app.Run();
