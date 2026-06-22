@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
+using System;
 
 namespace ECHO.Ticket.Business.RabbitMQ;
 
@@ -17,8 +18,14 @@ public class RabbitMQProducer : IMessageProducer
 
     public async Task SendMessageAsync<T>(T message, string queueName)
     {
-        var rabbitHost = _configuration["RabbitMQ:HostName"] ?? "localhost";
-        var factory = new ConnectionFactory { HostName = rabbitHost };
+        // Sihir: Artık connection string'i alıyoruz (Render'dan veya appsettings'den)
+        var connectionString = _configuration.GetConnectionString("RabbitMQConnection") 
+                               ?? "amqp://guest:guest@localhost:5672/";
+
+        var factory = new ConnectionFactory 
+        { 
+            Uri = new Uri(connectionString) 
+        };
         
         await using var connection = await factory.CreateConnectionAsync();
         await using var channel = await connection.CreateChannelAsync();

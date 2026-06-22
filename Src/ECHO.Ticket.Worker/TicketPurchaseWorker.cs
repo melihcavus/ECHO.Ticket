@@ -31,8 +31,14 @@ public class TicketPurchaseWorker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var rabbitHost = _configuration["RabbitMQ:HostName"] ?? "localhost";
-        var factory = new ConnectionFactory { HostName = rabbitHost };
+        // Sihir: Artık connection string'i alıyoruz (Render'dan veya appsettings'den)
+        var connectionString = _configuration.GetConnectionString("RabbitMQConnection") 
+                               ?? "amqp://guest:guest@localhost:5672/";
+
+        var factory = new ConnectionFactory 
+        { 
+            Uri = new Uri(connectionString) 
+        };
         
         await using var connection = await factory.CreateConnectionAsync(stoppingToken);
         await using var channel = await connection.CreateChannelAsync(cancellationToken: stoppingToken);
@@ -108,6 +114,7 @@ public class TicketPurchaseWorker : BackgroundService
                                         SeatLabel = $"{purchaseData.RowLabel}-{purchaseData.ColumnNumber}" 
                                     };
                                     
+                                    // Worker'ın SignalR'a haber vermesi için API URL'ini de dinamik okuyoruz
                                     var apiUrl = _configuration["ApiBaseUrl"] ?? "http://localhost:5216";
                                     await client.PostAsJsonAsync($"{apiUrl}/api/tickets/broadcast-seat", payload, stoppingToken);
                                 }
