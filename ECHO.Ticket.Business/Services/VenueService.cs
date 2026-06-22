@@ -79,4 +79,19 @@ public class VenueService : IVenueService
 
         return Result.Success("Sahne başarıyla oluşturuldu.");
     }
+    public async Task<Result> DeleteVenueAsync(Guid id) // ID tipine dikkat et
+    {
+        var venue = await _context.Venues.FindAsync(id);
+    
+        if (venue == null)
+            return Result.Failure("Silinmek istenen sahne bulunamadı.");
+
+        _context.Venues.Remove(venue);
+        await _context.SaveChangesAsync();
+
+        // Sildikten sonra önbelleği temizliyoruz ki arayüzde de hemen kaybolsun
+        await _cache.RemoveAsync("all_venues");
+
+        return Result.Success("Sahne başarıyla silindi.");
+    }
 }

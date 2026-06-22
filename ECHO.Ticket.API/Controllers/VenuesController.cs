@@ -38,4 +38,16 @@ public class VenuesController : ControllerBase
             
         return BadRequest(result);
     }
+    
+    [Authorize(Roles = "Admin")] // Sadece Admin silebilir
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        var result = await _venueService.DeleteVenueAsync(id);
+    
+        if (!result.IsSuccess)
+            return BadRequest(result);
+
+        return Ok(result);
+    }
 }

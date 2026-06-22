@@ -9,4 +9,5 @@ public interface IVenueService
 {
     Task<Result<IEnumerable<VenueDto>>> GetAllVenuesAsync();
     Task<Result> CreateVenueAsync(CreateVenueDto createVenueDto);
+    Task<Result> DeleteVenueAsync(Guid id);
 }
