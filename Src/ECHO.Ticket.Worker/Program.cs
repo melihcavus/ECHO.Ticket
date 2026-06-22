@@ -3,18 +3,24 @@ using ECHO.Ticket.DataAccess.Interfaces;
 using ECHO.Ticket.DataAccess.Repositories;
 using Microsoft.EntityFrameworkCore;
 using ECHO.Ticket.Worker;
+using Microsoft.AspNetCore.Builder; // WebBuilder için eklendi
 
-var builder = Host.CreateApplicationBuilder(args);
+// Host.CreateApplicationBuilder YERİNE WebApplication kullanıyoruz ki Render kandırılsın
+var builder = WebApplication.CreateBuilder(args);
 
-// Arka plan işçimiz (Worker)
+// Arka plan işçimiz (Worker) eskisi gibi çalışmaya aynen devam edecek
 builder.Services.AddHostedService<TicketPurchaseWorker>();
 
-// 1. Veritabanı bağlantısını (DbContext) Render'dan okuyacak şekilde ayarladık
+// 1. Veritabanı bağlantısı
 builder.Services.AddDbContext<EchoDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// 2. Generic Repository'yi sisteme kaydediyoruz
+// 2. Generic Repository
 builder.Services.AddScoped(typeof(IRepository<>), typeof(GenericRepository<>));
 
-var host = builder.Build();
-host.Run();
+var app = builder.Build();
+
+// Render'ın "Bu servis ayakta mı?" kontrolünü geçmesi için uydurma bir ana sayfa
+app.MapGet("/", () => "ECHO Worker Service is running and listening to RabbitMQ!");
+
+app.Run();
