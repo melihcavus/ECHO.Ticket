@@ -9,6 +9,9 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECHO.Ticket.API", "ECHO.Ticket.API\ECHO.Ticket.API.csproj", "{4F49863C-0B42-401C-B0C7-F84C2091DEAD}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Src", "Src", "{C5DB17AC-2DB7-459D-BCD9-4AC20A221F5F}"
+	ProjectSection(SolutionItems) = preProject
+		Src\Dockerfile.Worker = Src\Dockerfile.Worker
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{FAB5ED50-4007-4A0F-8AD8-4375106AEEDE}"
 EndProject
