@@ -7,6 +7,9 @@ import Header from '../../components/Header';
 import { CalendarDays, MapPin, User, CheckCircle2, Plus, X, Star, MessageSquare } from 'lucide-react';
 import { HubConnectionBuilder } from '@microsoft/signalr';
 
+// API VE DINAMİK URL'İ İÇERİ AKTARIYORUZ (SignalR için URL gerekli)
+import api, { API_BASE_URL } from '../../services/api';
+
 function EventDetail() {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -30,7 +33,6 @@ function EventDetail() {
     const [takenSeats, setTakenSeats] = useState([]);
     const [selectedSeat, setSelectedSeat] = useState(null);
 
-    // YENİ EKLENEN STATE'LER: Yorumlar ve Puanlama
     const [reviews, setReviews] = useState([]);
     const [reviewForm, setReviewForm] = useState({ rating: 5, content: '' });
     const [isReviewSubmitting, setIsReviewSubmitting] = useState(false);
@@ -38,25 +40,15 @@ function EventDetail() {
     const fetchEventDetail = async () => {
         setIsLoading(true);
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`http://localhost:5216/api/events/${id}`, {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                }
-            });
+            const response = await api.get(`/events/${id}`);
 
-            if (!response.ok) throw new Error(t('fetchError', 'Etkinlik detayları çekilemedi'));
-
-            const result = await response.json();
-
-            if (result.isSuccess) {
-                setEventData(result.data);
+            if (response.data.isSuccess) {
+                setEventData(response.data.data);
             } else {
-                setError(result.message);
+                setError(response.data.message);
             }
         } catch (err) {
-            setError(t('loadError', 'Etkinlik yüklenirken bir sorun oluştu.'));
+            setError(err.response?.data?.message || t('loadError', 'Etkinlik yüklenirken bir sorun oluştu.'));
         } finally {
             setIsLoading(false);
         }
@@ -64,23 +56,20 @@ function EventDetail() {
 
     const fetchTakenSeats = async () => {
         try {
-            const response = await fetch(`http://localhost:5216/api/events/${id}/taken-seats`);
-            const result = await response.json();
-            if (response.ok && result.isSuccess) {
-                setTakenSeats(result.data);
+            const response = await api.get(`/events/${id}/taken-seats`);
+            if (response.data.isSuccess) {
+                setTakenSeats(response.data.data);
             }
         } catch (err) {
             console.error("Dolu koltuklar çekilemedi:", err);
         }
     };
 
-    // YENİ EKLENEN FONKSİYON: Yorumları Getir
     const fetchReviews = async () => {
         try {
-            const response = await fetch(`http://localhost:5216/api/EventReviews/event/${id}`);
-            const result = await response.json();
-            if (response.ok && result.isSuccess) {
-                setReviews(result.data);
+            const response = await api.get(`/EventReviews/event/${id}`);
+            if (response.data.isSuccess) {
+                setReviews(response.data.data);
             }
         } catch (err) {
             console.error("Yorumlar çekilemedi:", err);
@@ -90,10 +79,13 @@ function EventDetail() {
     useEffect(() => {
         fetchEventDetail();
         fetchTakenSeats();
-        fetchReviews(); // Sayfa yüklendiğinde yorumları da çek
+        fetchReviews();
+
+        // SIGNALR İÇİN DİNAMİK URL (Local/Canlı uyumlu)
+        const hubUrl = API_BASE_URL.replace('/api', '/ticketHub');
 
         const connection = new HubConnectionBuilder()
-            .withUrl("http://localhost:5216/ticketHub")
+            .withUrl(hubUrl)
             .withAutomaticReconnect()
             .build();
 
@@ -141,25 +133,16 @@ function EventDetail() {
         }
 
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5216/api/Tickets/purchase', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    userId: user.id,
-                    eventId: id,
-                    ticketId: ticketId,
-                    rowLabel: rowLabel,
-                    columnNumber: colNumber
-                })
+            const response = await api.post('/Tickets/purchase', {
+                userId: user.id,
+                eventId: id,
+                ticketId: ticketId,
+                rowLabel: rowLabel,
+                columnNumber: colNumber
             });
 
-            const data = await response.json();
-
-            if (response.status === 202 || data.isSuccess) {
+            // .NET 202 Accepted dönebilir, Axios bunu response.status içinde saklar
+            if (response.status === 202 || response.data.isSuccess) {
                 if (setUser) {
                     setUser(prev => ({
                         ...prev,
@@ -174,10 +157,10 @@ function EventDetail() {
                     fetchEventDetail();
                 }, 2000);
             } else {
-                alert(`${t('operationFailed', 'İşlem başarısız')}: ${data.message || t('unknownError', 'Bilinmeyen bir hata oluştu.')}`);
+                alert(`${t('operationFailed', 'İşlem başarısız')}: ${response.data.message || t('unknownError', 'Bilinmeyen bir hata oluştu.')}`);
             }
         } catch (error) {
-            alert(t('serverError', 'İşlem sırasında sunucu ile bağlantı kurulamadı.'));
+            alert(error.response?.data?.message || t('serverError', 'İşlem sırasında sunucu ile bağlantı kurulamadı.'));
         } finally {
             setIsPurchasing(false);
         }
@@ -188,40 +171,29 @@ function EventDetail() {
         setIsTicketSubmitting(true);
 
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5216/api/Tickets', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    name: ticketFormData.name,
-                    description: ticketFormData.description,
-                    price: parseFloat(ticketFormData.price),
-                    capacity: parseInt(ticketFormData.capacity),
-                    eventId: id
-                })
+            const response = await api.post('/Tickets', {
+                name: ticketFormData.name,
+                description: ticketFormData.description,
+                price: parseFloat(ticketFormData.price),
+                capacity: parseInt(ticketFormData.capacity),
+                eventId: id
             });
 
-            const result = await response.json();
-
-            if (response.ok && result.isSuccess) {
+            if (response.data.isSuccess) {
                 alert(t('packageAdded', 'Paket başarıyla eklendi!'));
                 setIsTicketModalOpen(false);
                 setTicketFormData({ name: '', description: '', price: '', capacity: '' });
                 fetchEventDetail();
             } else {
-                alert(`${t('error', 'Hata')}: ${result.message || t('createFailed', 'Oluşturulamadı')}`);
+                alert(`${t('error', 'Hata')}: ${response.data.message || t('createFailed', 'Oluşturulamadı')}`);
             }
         } catch (err) {
-            alert(t('serverComError', 'Sunucuyla iletişim kurulurken bir hata oluştu.'));
+            alert(err.response?.data?.message || t('serverComError', 'Sunucuyla iletişim kurulurken bir hata oluştu.'));
         } finally {
             setIsTicketSubmitting(false);
         }
     };
 
-    // YENİ EKLENEN FONKSİYON: Yorum Gönderme İşlemi
     const handleReviewSubmit = async (e) => {
         e.preventDefault();
         if (!user) {
@@ -236,30 +208,21 @@ function EventDetail() {
 
         setIsReviewSubmitting(true);
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5216/api/EventReviews/add-review', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    eventId: id,
-                    rating: reviewForm.rating,
-                    content: reviewForm.content
-                })
+            const response = await api.post('/EventReviews/add-review', {
+                eventId: id,
+                rating: reviewForm.rating,
+                content: reviewForm.content
             });
 
-            const result = await response.json();
-            if (response.ok && result.isSuccess) {
+            if (response.data.isSuccess) {
                 alert(t('reviewAddedSuccess', 'Yorumunuz başarıyla eklendi!'));
-                setReviewForm({ rating: 5, content: '' }); // Formu sıfırla
-                fetchReviews(); // Listeyi yenile
+                setReviewForm({ rating: 5, content: '' });
+                fetchReviews();
             } else {
-                alert(`${t('error', 'Hata')}: ${result.message}`);
+                alert(`${t('error', 'Hata')}: ${response.data.message}`);
             }
         } catch (err) {
-            alert(t('serverComError', 'Sunucuyla iletişim kurulurken bir hata oluştu.'));
+            alert(err.response?.data?.message || t('serverComError', 'Sunucuyla iletişim kurulurken bir hata oluştu.'));
         } finally {
             setIsReviewSubmitting(false);
         }
@@ -346,7 +309,6 @@ function EventDetail() {
         );
     };
 
-    // Ortalama puan hesabı
     const averageRating = reviews.length > 0
         ? (reviews.reduce((acc, curr) => acc + curr.rating, 0) / reviews.length).toFixed(1)
         : 0;
@@ -385,7 +347,6 @@ function EventDetail() {
                                         <User size={18} className="text-cyan-600 dark:text-cyan-500" />
                                         <span>{eventData.organizerName}</span>
                                     </div>
-                                    {/* YENİ EKLENEN YILDIZ GÖSTERİMİ */}
                                     <div className="flex items-center gap-2 ml-auto">
                                         <Star size={18} className="text-amber-400 fill-amber-400" />
                                         <span className="font-bold text-slate-900 dark:text-white">{averageRating}</span>
@@ -405,14 +366,12 @@ function EventDetail() {
                                         </p>
                                     </div>
 
-                                    {/* YENİ: YORUMLAR VE DEĞERLENDİRMELER BÖLÜMÜ BAŞLANGICI */}
                                     <div className="bg-white dark:bg-[#111C3A] rounded-3xl border border-slate-200 dark:border-white/5 p-8 shadow-xl transition-colors duration-300 mt-8">
                                         <div className="flex items-center gap-3 mb-6">
                                             <MessageSquare size={24} className="text-cyan-600 dark:text-cyan-400" />
                                             <h2 className="text-xl font-bold text-slate-900 dark:text-white">{t('reviewsAndRatings', 'Değerlendirmeler ve Yorumlar')}</h2>
                                         </div>
 
-                                        {/* Yorum Yapma Formu */}
                                         {user ? (
                                             <form onSubmit={handleReviewSubmit} className="mb-8 p-6 bg-slate-50 dark:bg-[#0B1325]/50 rounded-2xl border border-slate-200 dark:border-white/5">
                                                 <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4">{t('writeReview', 'Sen de Değerlendir')}</h3>
@@ -454,7 +413,6 @@ function EventDetail() {
                                             </div>
                                         )}
 
-                                        {/* Yorumlar Listesi */}
                                         <div className="space-y-4">
                                             {reviews.length > 0 ? (
                                                 reviews.map(review => (
@@ -488,10 +446,8 @@ function EventDetail() {
                                             )}
                                         </div>
                                     </div>
-                                    {/* YORUMLAR BÖLÜMÜ BİTİŞİ */}
                                 </div>
 
-                                {/* SAĞ KOLON (Paketler vb.) */}
                                 <div className="space-y-6">
                                     <div className="flex items-center justify-between px-2">
                                         <h2 className="text-xl font-bold text-slate-900 dark:text-white">{t('supportPackages', 'Destek Paketleri')}</h2>

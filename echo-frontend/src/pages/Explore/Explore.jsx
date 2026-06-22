@@ -11,6 +11,9 @@ import sportImg from '../../assets/categories/sports.jpg';
 import artImg from '../../assets/categories/art.jpg';
 import eduImg from '../../assets/categories/education.jpg';
 
+// SİHİRLİ API KOPYAMIZI İÇERİ AKTARIYORUZ
+import api from '../../services/api';
+
 const getCategoryImage = (categoryName) => {
     switch(categoryName) {
         case 'Spor': return sportImg;
@@ -31,7 +34,6 @@ function Explore() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Arama çubuğu için state
     const [searchTerm, setSearchTerm] = useState('');
 
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -48,26 +50,17 @@ function Explore() {
     const fetchEvents = async () => {
         setIsLoading(true);
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`http://localhost:5216/api/events/explore`, {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                }
-            });
+            // AXIOS İLE TEK SATIRDA İŞLEM (Token otomatik eklenir)
+            const response = await api.get('/events/explore');
 
-            if (!response.ok) throw new Error(t('eventsFetchError', 'Etkinlikler çekilemedi'));
-
-            const result = await response.json();
-
-            if (result.isSuccess) {
-                setEvents(result.data);
+            if (response.data.isSuccess) {
+                setEvents(response.data.data);
             } else {
-                setError(result.message);
+                setError(response.data.message);
             }
         } catch (err) {
             console.error("Hata:", err);
-            setError(t('campaignsLoadError', 'Kampanyalar yüklenemedi.'));
+            setError(err.response?.data?.message || t('campaignsLoadError', 'Kampanyalar yüklenemedi.'));
         } finally {
             setIsLoading(false);
         }
@@ -75,13 +68,11 @@ function Explore() {
 
     const fetchVenues = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5216/api/Venues', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const result = await response.json();
-            if (response.ok && result.isSuccess) {
-                setVenues(result.data);
+            // AXIOS İLE SAHNELERİ ÇEKİYORUZ (Artık boş gelmeyecek!)
+            const response = await api.get('/Venues');
+
+            if (response.data.isSuccess) {
+                setVenues(response.data.data);
             }
         } catch (err) {
             console.error("Sahneler çekilemedi:", err);
@@ -98,43 +89,33 @@ function Explore() {
         setIsSubmitting(true);
 
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5216/api/events', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    title: formData.title,
-                    description: formData.description,
-                    eventDate: new Date(formData.eventDate).toISOString(),
-                    location: formData.location,
-                    category: formData.category,
-                    organizerId: user?.id,
-                    venueId: formData.venueId ? formData.venueId : null
-                })
+            // POST İŞLEMİ AXIOS İLE TEMİZLENDİ
+            const response = await api.post('/events', {
+                title: formData.title,
+                description: formData.description,
+                eventDate: new Date(formData.eventDate).toISOString(),
+                location: formData.location,
+                category: formData.category,
+                organizerId: user?.id,
+                venueId: formData.venueId ? formData.venueId : null
             });
 
-            const result = await response.json();
-
-            if (response.ok && result.isSuccess) {
+            if (response.data.isSuccess) {
                 alert(t('eventCreated', 'Etkinlik başarıyla oluşturuldu!'));
                 setIsModalOpen(false);
                 setFormData({ title: '', description: '', eventDate: '', location: '', category: 'Bilişim ve Teknoloji', venueId: '' });
                 fetchEvents();
             } else {
-                alert(`${t('error', 'Hata')}: ${result.message || t('createFailed', 'Oluşturulamadı')}`);
+                alert(`${t('error', 'Hata')}: ${response.data.message || t('createFailed', 'Oluşturulamadı')}`);
             }
         } catch (err) {
             console.error(err);
-            alert(t('serverComError', 'Sunucuyla iletişim kurulurken bir hata oluştu.'));
+            alert(err.response?.data?.message || t('serverComError', 'Sunucuyla iletişim kurulurken bir hata oluştu.'));
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    // Etkinlikleri filtreleme işlemi
     const filteredEvents = events.filter((event) => {
         const searchLower = searchTerm.toLowerCase();
         return (
