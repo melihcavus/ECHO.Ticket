@@ -101,6 +101,8 @@ builder.Services.AddScoped(typeof(IRepository<>), typeof(GenericRepository<>));
 
 builder.Services.AddValidatorsFromAssemblyContaining<EventValidator>();
 
+builder.Services.AddSingleton<IMessageProducer, RabbitMQProducer>();
+
 builder.Services.AddScoped<IEventService, EventService>();
 builder.Services.AddScoped<ITicketService, TicketService>();
 builder.Services.AddScoped<IUserService, UserService>();
@@ -108,7 +110,6 @@ builder.Services.AddScoped<IPledgeService, PledgeService>();
 builder.Services.AddScoped<IJwtProvider, JwtProvider>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
-builder.Services.AddScoped<IMessageProducer, RabbitMQProducer>();
 builder.Services.AddScoped<IVenueService, VenueService>();
 builder.Services.AddScoped<IEventReviewService, EventReviewService>();
 

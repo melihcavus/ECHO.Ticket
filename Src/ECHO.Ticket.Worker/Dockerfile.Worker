@@ -1,0 +1,20 @@
+# 1. Aşama: Kodları derleme ortamı (SDK)
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+
+# Projedeki tüm dosyaları kopyala
+COPY . .
+
+# Worker projesini bul, paketleri yükle ve yayına hazırla
+RUN dotnet restore "ECHO.Ticket.Worker/ECHO.Ticket.Worker.csproj"
+RUN dotnet publish "ECHO.Ticket.Worker/ECHO.Ticket.Worker.csproj" -c Release -o /app/publish
+
+# 2. Aşama: Çalıştırma ortamı (Runtime - Daha hafif)
+FROM mcr.microsoft.com/dotnet/aspnet:8.0
+WORKDIR /app
+
+# Derlenmiş dosyaları build aşamasından al
+COPY --from=build /app/publish .
+
+# Uygulamayı başlat (API yerine Worker.dll çalışacak)
+ENTRYPOINT ["dotnet", "ECHO.Ticket.Worker.dll"]

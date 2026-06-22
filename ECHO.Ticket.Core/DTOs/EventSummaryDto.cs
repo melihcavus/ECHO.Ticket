@@ -6,7 +6,7 @@ public class EventSummaryDto
     public string EventName { get; set; } = string.Empty;
     public DateTime EventDate { get; set; }
     
-    // İleride etkinlik için toplanan toplam parayı göstermek istersek diye:
+    // İleride etkinlik için toplanan toplam parayı gösterelim diye:
     public decimal TotalPledgeAmount { get; set; }
     public string Category { get; set; } = string.Empty;
 }
