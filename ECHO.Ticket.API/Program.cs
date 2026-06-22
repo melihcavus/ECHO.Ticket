@@ -135,4 +135,11 @@ app.UseAuthorization();
 app.MapHub<TicketHub>("/ticketHub");
 app.MapControllers();
 
+// --- OTOMATİK MIGRATION (Tabloları Canlıda Oluşturmak İçin) ---
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<EchoDbContext>();
+    dbContext.Database.Migrate();
+}
+
 app.Run();
