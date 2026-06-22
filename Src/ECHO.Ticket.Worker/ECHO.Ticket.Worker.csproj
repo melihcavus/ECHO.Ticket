@@ -5,6 +5,7 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <UserSecretsId>dotnet-ECHO.Ticket.Worker-6e447744-124d-438d-a87d-bb5dc53ea545</UserSecretsId>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     </PropertyGroup>
 
     <ItemGroup>
@@ -17,5 +18,11 @@
       <ProjectReference Include="..\..\ECHO.Ticket.Business\ECHO.Ticket.Business.csproj" />
       <ProjectReference Include="..\..\ECHO.Ticket.Core\ECHO.Ticket.Core.csproj" />
       <ProjectReference Include="..\..\ECHO.Ticket.DataAccess\ECHO.Ticket.DataAccess.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="..\..\.dockerignore">
+        <Link>.dockerignore</Link>
+      </Content>
     </ItemGroup>
 </Project>
