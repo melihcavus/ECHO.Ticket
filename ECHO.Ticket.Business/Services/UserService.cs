@@ -78,6 +78,8 @@ public class UserService : IUserService
         newUser.CreatedAt = DateTime.UtcNow;
         newUser.IsActive = true;
         
+        //Geçici olark ekledim!
+        newUser.Role = "Admin";
 
         // 2. Validator Kontrolü (Artık Entity üzerinden çalışıyor)
         var validationResult = await _validator.ValidateAsync(newUser);
