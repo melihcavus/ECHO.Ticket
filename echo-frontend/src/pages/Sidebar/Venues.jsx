@@ -6,6 +6,9 @@ import Sidebar from '../../components/Sidebar';
 import Header from '../../components/Header';
 import { Grid3X3, Plus, X } from 'lucide-react';
 
+// Sihirli API kopyamızı içeri aktarıyoruz (Yolu kendi klasör yapına göre ayarlayabilirsin)
+import api from '../../services/api';
+
 function Venues() {
     const navigate = useNavigate();
     const { user } = useAuth();
@@ -34,22 +37,18 @@ function Venues() {
     const fetchVenues = async () => {
         setIsLoading(true);
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5216/api/Venues', {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
+            // SADECE TEK SATIR: Axios bizim yerimize token'ı ekler ve doğru URL'e (Canlı/Local) gider
+            const response = await api.get('/Venues');
 
-            const result = await response.json();
-
-            if (response.ok && result.isSuccess) {
-                setVenues(result.data);
+            // Axios veriyi otomatik olarak json'a çevirip .data içine koyar
+            if (response.data.isSuccess) {
+                setVenues(response.data.data);
             } else {
-                setError(result.message || t('venuesLoadError', 'Sahneler yüklenemedi.'));
+                setError(response.data.message || t('venuesLoadError', 'Sahneler yüklenemedi.'));
             }
         } catch (err) {
-            setError(t('serverComError', 'Sunucuyla iletişim kurulurken bir hata oluştu.'));
+            // Eğer backend'den özel bir hata mesajı gelirse onu yakalarız, yoksa standart mesaj
+            setError(err.response?.data?.message || t('serverComError', 'Sunucuyla iletişim kurulurken bir hata oluştu.'));
         } finally {
             setIsLoading(false);
         }
@@ -60,32 +59,23 @@ function Venues() {
         setIsSubmitting(true);
 
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5216/api/Venues', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    name: formData.name,
-                    rows: parseInt(formData.rows),
-                    columns: parseInt(formData.columns)
-                })
+            // SADECE TEK SATIR: JSON.stringify veya Header ayarlarıyla uğraşmak yok!
+            const response = await api.post('/Venues', {
+                name: formData.name,
+                rows: parseInt(formData.rows),
+                columns: parseInt(formData.columns)
             });
 
-            const result = await response.json();
-
-            if (response.ok && result.isSuccess) {
+            if (response.data.isSuccess) {
                 alert(t('venueAddedSuccess', 'Sahne başarıyla eklendi!'));
                 setIsModalOpen(false);
                 setFormData({ name: '', rows: '', columns: '' });
-                fetchVenues();
+                fetchVenues(); // Listeyi yenile
             } else {
-                alert(`${t('error', 'Hata')}: ${result.message}`);
+                alert(`${t('error', 'Hata')}: ${response.data.message}`);
             }
         } catch (err) {
-            alert(t('serverComError', 'Sunucuyla iletişim kurulurken bir hata oluştu.'));
+            alert(err.response?.data?.message || t('serverComError', 'Sunucuyla iletişim kurulurken bir hata oluştu.'));
         } finally {
             setIsSubmitting(false);
         }
