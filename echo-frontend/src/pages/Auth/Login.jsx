@@ -1,4 +1,4 @@
-import { Mail, Lock, EyeOff, Github, TrendingUp, Handshake, Users, Loader2 } from 'lucide-react';
+import { Mail, Lock, EyeOff, TrendingUp, Handshake, Users, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { loginUser } from '../../services/authService';
 import { useNavigate, Link } from 'react-router-dom';
@@ -124,22 +124,6 @@ function Login() {
                                 {loading ? 'Kontrol ediliyor...' : 'Giriş Yap'}
                             </button>
                         </form>
-
-                        <div className="mt-10">
-                            <div className="relative flex items-center justify-center mb-6">
-                                <div className="border-t border-slate-200 w-full absolute"></div>
-                                <span className="bg-white px-4 text-sm text-slate-400 relative">Veya şununla giriş yapın</span>
-                            </div>
-
-                            <div className="flex justify-center gap-5">
-                                <button className="p-4 border border-slate-200 rounded-2xl hover:bg-slate-100/70 transition-all hover:-translate-y-1">
-                                    <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-7 h-7" />
-                                </button>
-                                <button className="p-4 border border-slate-200 rounded-2xl hover:bg-slate-100/70 transition-all text-slate-800 hover:-translate-y-1">
-                                    <Github className="w-7 h-7" />
-                                </button>
-                            </div>
-                        </div>
 
                         <p className="text-center text-base text-slate-600 mt-10">
                             Hesabınız yok mu? <Link to="/signup" className="text-cyan-600 font-bold hover:underline">Kayıt olun.</Link>
