@@ -6,6 +6,12 @@ import Header from '../../components/Header';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { BrainCircuit, AlertTriangle, CheckCircle2, ShieldAlert } from 'lucide-react';
 
+// SİHİRLİ DOKUNUŞ: Dinamik API Base URL
+// React projen Vite ile kurulduysa import.meta.env.VITE_API_URL okur.
+// Create React App ile kurulduysa process.env.REACT_APP_API_URL okur.
+// Hiçbiri yoksa (Fallback) otomatik olarak canlı Render sunucuna bağlanır.
+const API_URL = import.meta.env?.VITE_API_URL || process.env?.REACT_APP_API_URL || 'https://echo-ticket.onrender.com';
+
 function AiAnalytics() {
     const { user } = useAuth();
     const navigate = useNavigate();
@@ -18,7 +24,7 @@ function AiAnalytics() {
     // 1. GÜVENLİK KONTROLÜ: Sadece Admin girebilir
     useEffect(() => {
         if (user && user.role !== 'Admin') {
-            navigate('/dashboard'); // Admin değilse ana sayfaya postala
+            navigate('/dashboard');
         }
     }, [user, navigate]);
 
@@ -27,13 +33,14 @@ function AiAnalytics() {
         const fetchEvents = async () => {
             try {
                 const token = localStorage.getItem('token');
-                const response = await fetch('http://localhost:5216/api/events', {
+                // Hardcoded localhost yerine dinamik API_URL kullanılıyor
+                const response = await fetch(`${API_URL}/api/events`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const result = await response.json();
                 if (result.isSuccess && result.data.length > 0) {
                     setEvents(result.data);
-                    setSelectedEvent(result.data[0].id); // İlk etkinliği otomatik seç
+                    setSelectedEvent(result.data[0].id);
                 }
             } catch (error) {
                 console.error("Etkinlikler çekilemedi:", error);
@@ -50,7 +57,8 @@ function AiAnalytics() {
             setIsLoading(true);
             try {
                 const token = localStorage.getItem('token');
-                const response = await fetch(`http://localhost:5216/api/EventReviews/analytics/${selectedEvent}`, {
+                // Hardcoded localhost yerine dinamik API_URL kullanılıyor
+                const response = await fetch(`${API_URL}/api/EventReviews/analytics/${selectedEvent}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const result = await response.json();
@@ -70,7 +78,7 @@ function AiAnalytics() {
         fetchAnalytics();
     }, [selectedEvent]);
 
-    // Güvenlik: Render edilmeden önce rol onayı (Extra güvenlik)
+    // Güvenlik: Render edilmeden önce rol onayı
     if (!user || user.role !== 'Admin') return null;
 
     // Grafikler için veriyi harmanlama
@@ -187,7 +195,6 @@ function AiAnalytics() {
                                                 <div className="flex-1">
                                                     <div className="flex justify-between items-center mb-1">
                                                         <h4 className="font-bold text-slate-900 dark:text-white">{review.userFullName}</h4>
-                                                        {/* Hata Riski Yüzdesi Buradan Kaldırıldı */}
                                                     </div>
                                                     <p className="text-slate-600 dark:text-slate-300 mt-2">{review.content}</p>
                                                     <span className="text-xs text-slate-400 mt-2 block">
