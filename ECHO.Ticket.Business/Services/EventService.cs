@@ -98,14 +98,32 @@ public class EventService : IEventService
         try
         {
             var activeEvents = await _eventRepository.FindAsync(e => e.IsActive && e.EventDate > DateTime.UtcNow);
-        
-            var summaryList = activeEvents.Select(e => new EventSummaryDto
+            var allTickets = await _ticketRepository.GetAllAsync();
+            var allPledges = await _pledgeRepository.GetAllAsync();
+
+            var summaryList = activeEvents.Select(e => 
             {
-                EventId = e.Id,
-                EventName = e.Title,
-                EventDate = e.EventDate,
-                Category = e.Category,
-                TotalPledgeAmount = 0
+                var eventTickets = allTickets.Where(t => t.EventId == e.Id).ToList();
+                var eventTicketIds = eventTickets.Select(t => t.Id).ToList();
+            
+                var eventPledges = allPledges.Where(p => eventTicketIds.Contains(p.TicketId)).ToList();
+
+                var totalAmount = eventPledges.Sum(p => p.AmountPaid);
+            
+                // YENİ EKLENEN HESAPLAMALAR
+                var totalCap = eventTickets.Sum(t => t.Capacity); // Etkinliğin toplam bilet kapasitesi
+                var soldCount = eventPledges.Count; // Satılan toplam bilet adedi
+
+                return new EventSummaryDto
+                {
+                    EventId = e.Id,
+                    EventName = e.Title,
+                    EventDate = e.EventDate,
+                    Category = e.Category,
+                    TotalPledgeAmount = totalAmount,
+                    TotalCapacity = totalCap,
+                    SoldTickets = soldCount
+                };
             }).ToList();
 
             return Result<IEnumerable<EventSummaryDto>>.Success(summaryList);
@@ -115,7 +133,6 @@ public class EventService : IEventService
             return Result<IEnumerable<EventSummaryDto>>.Failure($"Hata: {ex.Message}");
         }
     }
-
     public async Task<Result<EventDetailDto>> GetEventDetailAsync(Guid id)
     {
         try

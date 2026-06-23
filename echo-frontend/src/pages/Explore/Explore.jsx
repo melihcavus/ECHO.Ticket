@@ -11,7 +11,6 @@ import sportImg from '../../assets/categories/sports.jpg';
 import artImg from '../../assets/categories/art.jpg';
 import eduImg from '../../assets/categories/education.jpg';
 
-// SİHİRLİ API KOPYAMIZI İÇERİ AKTARIYORUZ
 import api from '../../services/api';
 
 const getCategoryImage = (categoryName) => {
@@ -50,7 +49,6 @@ function Explore() {
     const fetchEvents = async () => {
         setIsLoading(true);
         try {
-            // AXIOS İLE TEK SATIRDA İŞLEM (Token otomatik eklenir)
             const response = await api.get('/events/explore');
 
             if (response.data.isSuccess) {
@@ -68,7 +66,6 @@ function Explore() {
 
     const fetchVenues = async () => {
         try {
-            // AXIOS İLE SAHNELERİ ÇEKİYORUZ (Artık boş gelmeyecek!)
             const response = await api.get('/Venues');
 
             if (response.data.isSuccess) {
@@ -89,7 +86,6 @@ function Explore() {
         setIsSubmitting(true);
 
         try {
-            // POST İŞLEMİ AXIOS İLE TEMİZLENDİ
             const response = await api.post('/events', {
                 title: formData.title,
                 description: formData.description,
@@ -203,11 +199,30 @@ function Explore() {
 
                                         <div className="mt-auto">
                                             <div className="flex justify-between items-end mb-2">
-                                                <span className="text-xs text-slate-500">{t('totalPledged', 'Toplanan Destek')}</span>
-                                                <span className="font-bold text-slate-900 dark:text-white tracking-tight">₺{event.totalPledgeAmount?.toLocaleString('tr-TR') || 0}</span>
+                                                {/* ROL KONTROLÜ: Admin parayı görür, User/Organizer doluluk oranını görür */}
+                                                {user?.role === 'Admin' ? (
+                                                    <>
+                                                        <span className="text-xs text-slate-500">{t('totalPledged', 'Toplanan Destek')}</span>
+                                                        <span className="font-bold text-slate-900 dark:text-white tracking-tight">₺{event.totalPledgeAmount?.toLocaleString('tr-TR') || 0}</span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <span className="text-xs text-slate-500 font-medium">Doluluk Oranı</span>
+                                                        <span className="font-bold text-slate-900 dark:text-white tracking-tight">
+                                                            %{event.totalCapacity > 0 ? Math.min(Math.round((event.soldTickets / event.totalCapacity) * 100), 100) : 0}
+                                                        </span>
+                                                    </>
+                                                )}
                                             </div>
+
+                                            {/* DİNAMİK DOLULUK BARI: Gerçek kapasiteye göre hesaplanıyor */}
                                             <div className="w-full bg-slate-100 dark:bg-[#0B1325] rounded-full h-2 overflow-hidden border border-slate-200 dark:border-white/5">
-                                                <div className="bg-gradient-to-r from-cyan-500 to-blue-500 h-2 rounded-full w-[15%]"></div>
+                                                <div
+                                                    className="bg-gradient-to-r from-cyan-500 to-blue-500 h-2 rounded-full transition-all duration-1000 ease-out"
+                                                    style={{
+                                                        width: `${event.totalCapacity > 0 ? Math.min((event.soldTickets / event.totalCapacity) * 100, 100) : 0}%`
+                                                    }}
+                                                ></div>
                                             </div>
 
                                             <button
