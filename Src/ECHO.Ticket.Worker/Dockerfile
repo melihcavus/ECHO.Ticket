@@ -1,31 +1,24 @@
-﻿# Stage 1: Build
+﻿# 1. Aşama: Kodları derleme ortamı (SDK)
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Build context = repo root (.) olduğu için Src/ ile başlıyoruz
-COPY ["Src/ECHO.Ticket.Worker/ECHO.Ticket.Worker.csproj",        "Src/ECHO.Ticket.Worker/"]
-COPY ["Src/ECHO.Ticket.Business/ECHO.Ticket.Business.csproj",    "Src/ECHO.Ticket.Business/"]
-COPY ["Src/ECHO.Ticket.Core/ECHO.Ticket.Core.csproj",            "Src/ECHO.Ticket.Core/"]
-COPY ["Src/ECHO.Ticket.DataAccess/ECHO.Ticket.DataAccess.csproj","Src/ECHO.Ticket.DataAccess/"]
-COPY ["ECHO.Ticket.sln", "."]
-
-RUN dotnet restore "Src/ECHO.Ticket.Worker/ECHO.Ticket.Worker.csproj"
-
+# Projedeki tüm dosyaları (API, Worker, Business vb.) yan yana kopyala
 COPY . .
 
-RUN dotnet publish "Src/ECHO.Ticket.Worker/ECHO.Ticket.Worker.csproj" \
-    -c Release \
-    -o /app/publish \
-    --no-restore
+# Paketleri yükle ve Worker projesini yayına hazırla (Publish)
+RUN dotnet restore "ECHO.Ticket.Worker/ECHO.Ticket.Worker.csproj"
+RUN dotnet publish "ECHO.Ticket.Worker/ECHO.Ticket.Worker.csproj" -c Release -o /app/publish
 
-# Stage 2: Runtime
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+# 2. Aşama: Çalıştırma ortamı (Runtime - Daha hafif)
+FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
 
-COPY --from=build /app/publish .
-
+# Render'ın (Free Web Service) dinleyeceği portu belirtiyoruz
 ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
 
-ENTRYPOINT ["dotnet", "ECHO.Ticket.Worker.dll"]
+# Derlenmiş dosyaları build aşamasından al
+COPY --from=build /app/publish .
 
+# Uygulamayı başlat
+ENTRYPOINT ["dotnet", "ECHO.Ticket.Worker.dll"]
