@@ -2,22 +2,22 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Projedeki tüm dosyaları (API, Worker, Business vb.) yan yana kopyala
+# GitHub deposundaki her şeyi (Tüm root'u) içeri kopyala
 COPY . .
 
-# Paketleri yükle ve Worker projesini yayına hazırla (Publish)
-RUN dotnet restore "ECHO.Ticket.Worker/ECHO.Ticket.Worker.csproj"
-RUN dotnet publish "ECHO.Ticket.Worker/ECHO.Ticket.Worker.csproj" -c Release -o /app/publish
+# Paketleri yükle ve Src altındaki Worker projesini yayına hazırla
+RUN dotnet restore "Src/ECHO.Ticket.Worker/ECHO.Ticket.Worker.csproj"
+RUN dotnet publish "Src/ECHO.Ticket.Worker/ECHO.Ticket.Worker.csproj" -c Release -o /app/publish
 
-# 2. Aşama: Çalıştırma ortamı (Runtime - Daha hafif)
+# 2. Aşama: Çalıştırma ortamı (Runtime)
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
 
-# Render'ın (Free Web Service) dinleyeceği portu belirtiyoruz
+# Render Free Web Service için port tanımı
 ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
 
-# Derlenmiş dosyaları build aşamasından al
+# Derlenmiş dosyaları al
 COPY --from=build /app/publish .
 
 # Uygulamayı başlat
