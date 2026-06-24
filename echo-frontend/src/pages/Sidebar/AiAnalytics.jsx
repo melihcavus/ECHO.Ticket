@@ -6,11 +6,14 @@ import Header from '../../components/Header';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { BrainCircuit, AlertTriangle, CheckCircle2, ShieldAlert } from 'lucide-react';
 
-// SİHİRLİ DOKUNUŞ: Dinamik API Base URL
-// React projen Vite ile kurulduysa import.meta.env.VITE_API_URL okur.
-// Create React App ile kurulduysa process.env.REACT_APP_API_URL okur.
-// Hiçbiri yoksa (Fallback) otomatik olarak canlı Render sunucuna bağlanır.
-const API_URL = import.meta.env?.VITE_API_URL || process.env?.REACT_APP_API_URL || 'https://echo-ticket.onrender.com';
+// SİHİRLİ DOKUNUŞ: Otomatik Ortam Algılama (Vite Uyumlu)
+// 1. Varsa .env dosyasındaki VITE_API_URL'i kullanır.
+// 2. Yoksa adres çubuğuna bakar: "localhost" ise otomatik 5216 portuna (lokal backend) gider.
+// 3. Canlıdaysa doğrudan Render sunucusuna bağlanır. "process" kelimesi tamamen kaldırıldı!
+const API_URL = import.meta.env?.VITE_API_URL ||
+    (window.location.hostname === 'localhost'
+        ? 'http://localhost:5216'
+        : 'https://echo-ticket.onrender.com');
 
 function AiAnalytics() {
     const { user } = useAuth();
@@ -33,7 +36,6 @@ function AiAnalytics() {
         const fetchEvents = async () => {
             try {
                 const token = localStorage.getItem('token');
-                // Hardcoded localhost yerine dinamik API_URL kullanılıyor
                 const response = await fetch(`${API_URL}/api/events`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -57,7 +59,6 @@ function AiAnalytics() {
             setIsLoading(true);
             try {
                 const token = localStorage.getItem('token');
-                // Hardcoded localhost yerine dinamik API_URL kullanılıyor
                 const response = await fetch(`${API_URL}/api/EventReviews/analytics/${selectedEvent}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
